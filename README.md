@@ -1,100 +1,91 @@
-# expense-tracker-fullstack
-Full Stack Expense Tracker Web App with Firebase Authentication, Firestore Database &amp; Interactive Analytics Dashboard
+# 💰 Expense Tracker Full Stack Web Application
 
-## 📅 Day 01 Progress
+A Full Stack Expense Tracking Web Application designed to help users monitor, analyze and manage their daily financial expenses efficiently.
 
-### ✅ Login Page UI Development
-
-- Designed and implemented a responsive Login Page interface
-- Created structured layout including:
-  - Email input field
-  - Password input field
-  - Login button
-  - Signup navigation link
+This project allows users to securely manage personal spending data and visualize monthly expenditure patterns through an interactive dashboard.
 
 ---
 
-### 🎨 UI & Styling Enhancements
+## 🚀 Project Overview
 
-- Implemented clean form layout using Flexbox
-- Applied consistent spacing and alignment across components
-- Added gradient background for visual aesthetics
-- Integrated card-based design for login container
-- Implemented input focus states for improved user experience
+Managing daily expenses manually using notes or spreadsheets can be inefficient and difficult to track over time.
 
----
+This application provides a centralized platform where users can:
 
-### 📱 Responsiveness
+- Record daily expenses
+- Categorize spending
+- Monitor monthly usage
+- Visualize financial habits
+- Manage budgets effectively
 
-- Ensured mobile-friendly layout across different screen sizes
-- Adjusted form elements for better usability on smaller devices
-- Optimized container width for tablet and mobile views
+The goal of this project is to build a scalable financial tracking system while implementing full stack development concepts.
 
 ---
 
-### 🧩 Code Structure
+## 🛠️ Technologies Used
 
-- Maintained separation of concerns:
-  - HTML for structure
-  - CSS for styling
-  - JavaScript for functionality
-- Organized project into modular file structure for scalability
+### Frontend
+- HTML
+- CSS
+- JavaScript
 
----
+### Backend
+- Firebase Authentication
+- Firebase Firestore Database
 
-🚧 Next Step: Signup Page UI & Frontend Validation
-
-## 📅 Day 02 Progress
-
-### ✅ Signup Page UI Implemented
-
-- Created responsive Signup Page with:
-  - Full Name field
-  - Email Address field
-  - Password field
-  - Confirm Password field
-  - Terms & Conditions checkbox
-- Added navigation between Login and Signup pages
+### Analytics
+- Chart.js
 
 ---
 
-### 🧠 Frontend Form Validation Added (JavaScript)
+## 🔑 Key Features
 
-Implemented real-time validation for:
-
-- Name (minimum 2 characters & valid format)
-- Email format validation using Regex
-- Password length & strength check
-- Confirm Password match validation
-- Terms & Conditions agreement
-
----
-
-### 🔒 Password Features
-
-- Password strength indicator (Weak → Strong)
-- Show / Hide password toggle functionality
-- Real-time feedback for missing character types
+- User Authentication (Signup & Login)
+- Expense Management (CRUD Operations)
+- Category-based Expense Tracking
+- Monthly Expense Summary
+- Interactive Data Visualization
+- Real-time Form Validation
+- Mobile Responsive Design
 
 ---
 
-### ⚙️ Additional Functionality
+## 📊 Functional Modules
 
-- Error message display for invalid inputs
-- Input success & error states
-- Simulated API call using setTimeout
-- Automatic redirect to login page after signup
-- Scroll to first invalid field on error
+### Authentication Module
+Handles user signup, login and session management using Firebase Authentication.
 
 ---
 
-### 📱 UI Improvements
+### Expense Management Module
+Allows users to:
 
-- Mobile responsive layout
-- Reusable input components
-- Animated background effects
-- Clean form alignment using Flexbox
+- Add expenses
+- Edit expenses
+- Delete expenses
+- View expense history
+
+All user-specific data is stored securely in Firestore Database.
 
 ---
 
-🚧 Next Step: Firebase Authentication Integration
+### Analytics Module
+Displays:
+
+- Category-wise expense distribution
+- Monthly spending patterns
+using interactive charts.
+
+---
+
+## 🎯 Project Goals
+
+- Learn full stack web development
+- Implement authentication systems
+- Perform CRUD operations using cloud database
+- Visualize financial data using charts
+- Practice scalable UI design
+
+---
+
+📌 This project is currently under active development.
