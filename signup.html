@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker | Sign Up</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Animated background (same as login page) -->
+    <div class="bg-animation">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+    </div>
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Signup card -->
+        <div class="login-card"> <!-- Reusing same card class -->
+            <!-- Logo section -->
+            <div class="logo-wrapper">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2>ExpenseTracker</h2>
+            </div>
+
+            <!-- Header section -->
+            <div class="header">
+                <h1>Create account</h1>
+                <p>Start managing your finances today</p>
+            </div>
+
+            <!-- Signup form -->
+            <form id="signupForm" class="login-form" novalidate>
+                <!-- Name field -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="input-field">
+                        <label for="name">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            placeholder="Enter your full name"
+                            required
+                        >
+                        <div class="input-highlight"></div>
+                        <div class="error-message" id="nameError"></div>
+                    </div>
+                </div>
+
+                <!-- Email field -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="input-field">
+                        <label for="email">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Enter your email"
+                            required
+                        >
+                        <div class="input-highlight"></div>
+                        <div class="error-message" id="emailError"></div>
+                    </div>
+                </div>
+
+                <!-- Password field -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="input-field">
+                        <label for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                placeholder="Create a password"
+                                required
+                            >
+                            <button type="button" class="toggle-password" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="input-highlight"></div>
+                        <div class="error-message" id="passwordError"></div>
+                        <!-- Password strength indicator -->
+                        <div class="password-strength" id="passwordStrength"></div>
+                    </div>
+                </div>
+
+                <!-- Confirm Password field -->
+                <div class="input-group">
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="input-field">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                name="confirmPassword" 
+                                placeholder="Confirm your password"
+                                required
+                            >
+                            <button type="button" class="toggle-password" id="toggleConfirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="input-highlight"></div>
+                        <div class="error-message" id="confirmPasswordError"></div>
+                    </div>
+                </div>
+
+                <!-- Terms and conditions checkbox -->
+                <div class="form-options">
+                    <label class="remember-checkbox">
+                        <input type="checkbox" id="terms" required>
+                        <span class="checkbox-custom"></span>
+                        <span class="checkbox-label">I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a></span>
+                    </label>
+                </div>
+
+                <!-- Signup button -->
+                <button type="submit" class="login-btn" id="signupBtn">
+                    <span class="btn-text">Create Account</span>
+                    <span class="btn-loader" style="display: none;">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Login link -->
+            <p class="signup-text">
+                Already have an account? 
+                <a href="index.html" id="loginLink">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="js/signup.js"></script>
+</body>
+</html>
