@@ -1,7 +1,14 @@
-// Wait for DOM to be fully loaded
+import { 
+    auth, 
+    signInWithEmailAndPassword 
+} from './firebase-config.js';
+
+import { getErrorMessage } from './auth-errors.js';
+
+// Single DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Get DOM elements
+    // ===== GET DOM ELEMENTS =====
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const btnText = document.querySelector('.btn-text');
@@ -14,18 +21,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const socialBtns = document.querySelectorAll('.social-btn');
     const rememberCheckbox = document.getElementById('remember');
 
-    // Toggle password visibility
+    // ===== PASSWORD TOGGLE FUNCTIONALITY =====
     if (togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
             
-            // Toggle icon
             const icon = this.querySelector('i');
             icon.classList.toggle('fa-eye');
             icon.classList.toggle('fa-eye-slash');
             
-            // Add animation class
             this.classList.add('pulse');
             setTimeout(() => {
                 this.classList.remove('pulse');
@@ -33,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Real-time validation with animations
+    // ===== VALIDATION FUNCTIONS =====
     function validateEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
@@ -43,138 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return password.length >= 6;
     }
 
-    // Add input event listeners with visual feedback
-    emailInput.addEventListener('input', function() {
-        const inputGroup = this.closest('.input-group');
-        const icon = inputGroup.querySelector('.input-icon i');
-        
-        if (this.value && !validateEmail(this.value)) {
-            this.style.borderColor = '#ef4444';
-            icon.style.color = '#ef4444';
-            
-            // Add shake animation for invalid input
-            this.classList.add('shake');
-            setTimeout(() => {
-                this.classList.remove('shake');
-            }, 500);
-        } else if (this.value && validateEmail(this.value)) {
-            this.style.borderColor = '#22c55e';
-            icon.style.color = '#22c55e';
-        } else {
-            this.style.borderColor = '';
-            icon.style.color = '';
-        }
-    });
-
-    passwordInput.addEventListener('input', function() {
-        const inputGroup = this.closest('.input-group');
-        const icon = inputGroup.querySelector('.input-icon i');
-        
-        if (this.value && !validatePassword(this.value)) {
-            this.style.borderColor = '#ef4444';
-            icon.style.color = '#ef4444';
-            
-            // Show password strength indicator
-            showPasswordStrength(this.value);
-        } else if (this.value && validatePassword(this.value)) {
-            this.style.borderColor = '#22c55e';
-            icon.style.color = '#22c55e';
-        } else {
-            this.style.borderColor = '';
-            icon.style.color = '';
-        }
-    });
-
-    // Password strength indicator
-    function showPasswordStrength(password) {
-        let strength = 0;
-        if (password.length >= 6) strength++;
-        if (password.match(/[a-z]+/)) strength++;
-        if (password.match(/[A-Z]+/)) strength++;
-        if (password.match(/[0-9]+/)) strength++;
-        if (password.match(/[$@#&!]+/)) strength++;
-
-        const strengthColors = ['#ef4444', '#f59e0b', '#f59e0b', '#22c55e', '#22c55e'];
-        const strengthTexts = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
-
-        // Create or update strength indicator
-        let indicator = document.querySelector('.password-strength');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'password-strength';
-            passwordInput.parentNode.appendChild(indicator);
-        }
-
-        indicator.style.marginTop = '8px';
-        indicator.style.fontSize = '12px';
-        indicator.style.color = strengthColors[strength];
-        indicator.textContent = `Password strength: ${strengthTexts[strength]}`;
-    }
-
-    // Form submission with loading animation
-    loginForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        // Get values
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-
-        // Validation
-        if (!email || !password) {
-            showNotification('Please fill in all fields', 'error');
-            return;
-        }
-
-        if (!validateEmail(email)) {
-            showNotification('Please enter a valid email address', 'error');
-            emailInput.focus();
-            return;
-        }
-
-        if (!validatePassword(password)) {
-            showNotification('Password must be at least 6 characters long', 'error');
-            passwordInput.focus();
-            return;
-        }
-
-        // Show loading state
-        loginBtn.disabled = true;
-        btnText.style.display = 'none';
-        btnLoader.style.display = 'inline-block';
-        loginBtn.style.opacity = '0.8';
-
-        // Simulate API call (will be replaced with actual backend)
-        setTimeout(() => {
-            // Hide loading state
-            loginBtn.disabled = false;
-            btnText.style.display = 'inline';
-            btnLoader.style.display = 'none';
-            loginBtn.style.opacity = '1';
-
-            // Success notification
-            showNotification('Login successful! Redirecting...', 'success');
-
-            // Store remember me preference
-            if (rememberCheckbox && rememberCheckbox.checked) {
-                localStorage.setItem('rememberEmail', email);
-            }
-
-            // Clear form
-            loginForm.reset();
-
-            // Remove password strength indicator
-            const indicator = document.querySelector('.password-strength');
-            if (indicator) indicator.remove();
-
-            // Redirect to dashboard (will be implemented later)
-            setTimeout(() => {
-                alert('Dashboard page will be implemented next!');
-            }, 1500);
-        }, 2000);
-    });
-
-    // Custom notification system
-    function showNotification(message, type) {
+    // ===== UI FEEDBACK FUNCTIONS =====
+    function showNotification(message, type = 'error') {
         // Remove existing notification
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -205,38 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.style.gap = '12px';
         notification.style.animation = 'slideIn 0.3s ease';
 
-        // Add animation keyframes
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            .shake {
-                animation: shake 0.5s ease-in-out;
-            }
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-            .pulse {
-                animation: pulse 0.3s ease;
-            }
-            @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-            }
-        `;
-        document.head.appendChild(style);
-
         document.body.appendChild(notification);
 
         // Auto remove after 3 seconds
@@ -248,37 +91,213 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Sign up link click handler
-    // signupLink.addEventListener('click', function(event) {
-    //     event.preventDefault();
-    //     showNotification('Sign up page coming soon!', 'info');
+    // ===== REAL-TIME VALIDATION =====
+    emailInput.addEventListener('input', function() {
+        const inputGroup = this.closest('.input-group');
+        const icon = inputGroup.querySelector('.input-icon i');
         
-    //     // Add bounce animation to link
-    //     this.classList.add('pulse');
-    //     setTimeout(() => {
-    //         this.classList.remove('pulse');
-    //     }, 300);
-    // });
-
-    // Forgot password link click handler
-    forgotLink.addEventListener('click', function(event) {
-        event.preventDefault();
-        showNotification('Password reset feature coming soon!', 'info');
+        if (this.value && !validateEmail(this.value)) {
+            this.style.borderColor = '#ef4444';
+            icon.style.color = '#ef4444';
+            
+            this.classList.add('shake');
+            setTimeout(() => {
+                this.classList.remove('shake');
+            }, 500);
+        } else if (this.value && validateEmail(this.value)) {
+            this.style.borderColor = '#22c55e';
+            icon.style.color = '#22c55e';
+        } else {
+            this.style.borderColor = '';
+            icon.style.color = '';
+        }
     });
+
+    passwordInput.addEventListener('input', function() {
+        const inputGroup = this.closest('.input-group');
+        const icon = inputGroup.querySelector('.input-icon i');
+        
+        if (this.value && !validatePassword(this.value)) {
+            this.style.borderColor = '#ef4444';
+            icon.style.color = '#ef4444';
+            
+            showPasswordStrength(this.value);
+        } else if (this.value && validatePassword(this.value)) {
+            this.style.borderColor = '#22c55e';
+            icon.style.color = '#22c55e';
+        } else {
+            this.style.borderColor = '';
+            icon.style.color = '';
+        }
+    });
+
+    // ===== PASSWORD STRENGTH INDICATOR =====
+    function showPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 6) strength++;
+        if (password.match(/[a-z]+/)) strength++;
+        if (password.match(/[A-Z]+/)) strength++;
+        if (password.match(/[0-9]+/)) strength++;
+        if (password.match(/[$@#&!]+/)) strength++;
+
+        const strengthColors = ['#ef4444', '#f59e0b', '#f59e0b', '#22c55e', '#22c55e'];
+        const strengthTexts = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
+
+        let indicator = document.querySelector('.password-strength');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'password-strength';
+            passwordInput.parentNode.appendChild(indicator);
+        }
+
+        indicator.style.marginTop = '8px';
+        indicator.style.fontSize = '12px';
+        indicator.style.color = strengthColors[strength];
+        indicator.textContent = `Password strength: ${strengthTexts[strength]}`;
+    }
+
+    // ===== FIREBASE LOGIN FUNCTION =====
+    async function loginUser(email, password) {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            return {
+                success: true,
+                user: userCredential.user
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error
+            };
+        }
+    }
+
+    // ===== FORM SUBMISSION WITH FIREBASE =====
+    loginForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        // Get values
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        // Validation
+        if (!email || !password) {
+            showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
+        if (!validateEmail(email)) {
+            showNotification('Please enter a valid email address', 'error');
+            emailInput.focus();
+            return;
+        }
+
+        if (!validatePassword(password)) {
+            showNotification('Password must be at least 6 characters long', 'error');
+            passwordInput.focus();
+            return;
+        }
+
+        // Show loading state
+        loginBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoader.style.display = 'inline-block';
+        loginBtn.style.opacity = '0.8';
+
+        // Remove any existing error classes
+        emailInput.classList.remove('error');
+        passwordInput.classList.remove('error');
+
+        // Attempt Firebase login
+        const result = await loginUser(email, password);
+
+        // Hide loading state
+        loginBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+        loginBtn.style.opacity = '1';
+
+        if (result.success) {
+            // Login successful!
+            console.log('User logged in:', result.user.uid);
+            
+            // Save email if "Remember me" is checked
+            if (rememberCheckbox && rememberCheckbox.checked) {
+                localStorage.setItem('rememberEmail', email);
+            } else {
+                localStorage.removeItem('rememberEmail');
+            }
+            
+            // Show success message
+            showNotification('Login successful! Redirecting to dashboard...', 'success');
+            
+            // Clear password field for security
+            passwordInput.value = '';
+            
+            // Remove password strength indicator
+            const indicator = document.querySelector('.password-strength');
+            if (indicator) indicator.remove();
+            
+            // Redirect to dashboard after 1.5 seconds
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1500);
+            
+        } else {
+            // Login failed - show user-friendly error message
+            const errorMessage = getErrorMessage(result.error);
+            showNotification(errorMessage, 'error');
+            
+            // Log error for debugging
+            console.error('Login error details:', result.error);
+            
+            // Field-specific error handling
+            switch (result.error.code) {
+                case 'auth/invalid-email':
+                case 'auth/user-not-found':
+                case 'auth/user-disabled':
+                    emailInput.classList.add('error');
+                    emailInput.focus();
+                    break;
+                    
+                case 'auth/wrong-password':
+                case 'auth/too-many-requests':
+                    passwordInput.classList.add('error');
+                    passwordInput.value = '';  // Clear password
+                    passwordInput.focus();
+                    break;
+                    
+                default:
+                    // For network errors etc., don't highlight specific field
+                    break;
+            }
+        }
+    });
+
+    // ===== OTHER EVENT HANDLERS =====
+    // Forgot password link
+    if (forgotLink) {
+        forgotLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            showNotification('Password reset feature coming soon!', 'info');
+        });
+    }
 
     // Social login buttons
-    socialBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const provider = this.classList.contains('google') ? 'Google' : 'GitHub';
-            showNotification(`${provider} login will be implemented later!`, 'info');
+    if (socialBtns.length > 0) {
+        socialBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const provider = this.classList.contains('google') ? 'Google' : 'GitHub';
+                showNotification(`${provider} login will be implemented later!`, 'info');
+            });
         });
-    });
+    }
 
     // Check for saved email
     const savedEmail = localStorage.getItem('rememberEmail');
     if (savedEmail) {
         emailInput.value = savedEmail;
-        rememberCheckbox.checked = true;
+        if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 
     // Add floating label effect
@@ -323,4 +342,39 @@ document.addEventListener('DOMContentLoaded', function() {
         el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
         observer.observe(el);
     });
+
+    // Add animation keyframes if they don't exist
+    if (!document.querySelector('#animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'animation-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .shake {
+                animation: shake 0.5s ease-in-out;
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+            .pulse {
+                animation: pulse 0.3s ease;
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 });
