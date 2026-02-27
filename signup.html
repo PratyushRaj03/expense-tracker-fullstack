@@ -149,7 +149,25 @@
             </p>
         </div>
     </div>
+    <script type="import">
+        // Import Firebase core and auth
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        
+        // Make these available globally (simpler for now)
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    </script>
 
-    <script src="js/signup.js"></script>
+    <script type="module">
+        import './js/firebase-config.js';
+    </script>
+    
+    <!-- Load our Firebase configuration -->
+    <script type="module" src="js/auth-errors.js"></script>
+
+    <script type="module" src="js/signup.js"></script>
 </body>
 </html>
