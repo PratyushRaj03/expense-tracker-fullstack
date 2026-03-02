@@ -37,9 +37,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Currency elements
     const currencySelect = document.getElementById('currencySelect');
     
+    // Budget elements
+    const setBudgetBtn = document.getElementById('setBudgetBtn');
+    const saveBudgetBtn = document.getElementById('saveBudgetBtn');
+    const cancelBudgetBtn = document.getElementById('cancelBudgetBtn');
+    const budgetInput = document.getElementById('monthlyBudget');
+    const currencySymbolEl = document.getElementById('budgetCurrencySymbol');
+    
     // State variables
     let currentUser = null;
     let selectedCurrency = 'USD'; // Default currency
+    let currentBudget = 0;
+    let currentMonthSpent = 0;
+    
     let currencySymbols = {
         'USD': '$',
         'INR': '₹',
@@ -106,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         currencySelect.value = selectedCurrency;
                     }
                     
+                    // Update currency symbol in budget form
+                    if (currencySymbolEl) {
+                        currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
+                    }
+                    
                     console.log("💰 Loaded currency preference:", selectedCurrency);
                 }
             }
@@ -152,6 +167,211 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Default formatting
         return `${symbol}${amount.toFixed(2)}`;
+    }
+
+    // ===== BUDGET FUNCTIONS =====
+
+    /**
+     * Load user's budget from Firestore
+     * @param {string} userId - The user's UID
+     */
+    async function loadUserBudget(userId) {
+        try {
+            const userRef = doc(db, "users", userId);
+            const userSnap = await getDoc(userRef);
+            
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                currentBudget = userData.monthlyBudget || 0;
+                
+                // Update UI
+                updateBudgetDisplay();
+                console.log("💰 Loaded budget:", currentBudget);
+            }
+        } catch (error) {
+            console.error("Error loading budget:", error);
+        }
+    }
+
+    /**
+     * Save user's budget to Firestore
+     * @param {number} budget - The budget amount
+     */
+    async function saveUserBudget(budget) {
+        if (!currentUser) {
+            showNotification('Please log in first', 'error');
+            return false;
+        }
+        
+        try {
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, {
+                monthlyBudget: budget,
+                updatedAt: new Date().toISOString()
+            });
+            
+            currentBudget = budget;
+            console.log("✅ Budget saved:", budget);
+            
+            // Update display
+            await calculateMonthlySpending();
+            updateBudgetDisplay();
+            showBudgetForm(false);
+            showNotification('Budget saved successfully!', 'success');
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Error saving budget:", error);
+            showNotification('Failed to save budget', 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Calculate total spending for current month
+     */
+    async function calculateMonthlySpending() {
+        if (!currentUser) return 0;
+        
+        try {
+            const expensesRef = collection(db, "users", currentUser.uid, "expenses");
+            const querySnapshot = await getDocs(expensesRef);
+            
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            let monthlyTotal = 0;
+            
+            querySnapshot.forEach((doc) => {
+                const expense = doc.data();
+                const expenseDate = new Date(expense.date);
+                
+                if (expenseDate.getMonth() === currentMonth && 
+                    expenseDate.getFullYear() === currentYear) {
+                    monthlyTotal += expense.amount;
+                }
+            });
+            
+            currentMonthSpent = monthlyTotal;
+            return monthlyTotal;
+            
+        } catch (error) {
+            console.error("Error calculating monthly spending:", error);
+            return 0;
+        }
+    }
+
+    /**
+     * Update budget display in UI
+     */
+    function updateBudgetDisplay() {
+        const budgetDisplay = document.getElementById('budgetDisplay');
+        const budgetForm = document.getElementById('budgetForm');
+        const setBudgetBtn = document.getElementById('setBudgetBtn');
+        
+        const budgetAmountEl = document.getElementById('budgetAmount');
+        const budgetSpentEl = document.getElementById('budgetSpent');
+        const budgetRemainingEl = document.getElementById('budgetRemaining');
+        const progressBar = document.getElementById('budgetProgressBar');
+        const budgetWarning = document.getElementById('budgetWarning');
+        const warningMessage = document.getElementById('warningMessage');
+        
+        // Update currency symbol in form
+        if (currencySymbolEl) {
+            currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
+        }
+        
+        if (currentBudget > 0) {
+            // Show budget display, hide form
+            if (budgetDisplay) budgetDisplay.style.display = 'block';
+            if (budgetForm) budgetForm.style.display = 'none';
+            if (setBudgetBtn) setBudgetBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit Budget';
+            
+            // Calculate remaining
+            const remaining = currentBudget - currentMonthSpent;
+            const percentageUsed = (currentMonthSpent / currentBudget) * 100;
+            
+            // Update display values
+            if (budgetAmountEl) budgetAmountEl.textContent = formatAmount(currentBudget);
+            if (budgetSpentEl) budgetSpentEl.textContent = formatAmount(currentMonthSpent);
+            if (budgetRemainingEl) budgetRemainingEl.textContent = formatAmount(remaining);
+            
+            // Update progress bar
+            if (progressBar) {
+                progressBar.style.width = `${Math.min(percentageUsed, 100)}%`;
+                
+                // Remove existing classes
+                progressBar.classList.remove('warning', 'danger');
+                
+                // Determine status and warning
+                if (percentageUsed >= 110) {
+                    // Exceeded by 10% or more
+                    progressBar.classList.add('danger');
+                    if (budgetWarning) {
+                        budgetWarning.className = 'budget-warning danger';
+                        warningMessage.textContent = `⚠️ You've exceeded your budget by ${formatAmount(Math.abs(remaining))}!`;
+                        budgetWarning.style.display = 'flex';
+                    }
+                    
+                } else if (percentageUsed >= 100) {
+                    // At or just over budget
+                    progressBar.classList.add('danger');
+                    if (budgetWarning) {
+                        budgetWarning.className = 'budget-warning danger';
+                        warningMessage.textContent = `⚠️ You've reached your monthly budget!`;
+                        budgetWarning.style.display = 'flex';
+                    }
+                    
+                } else if (percentageUsed >= 80) {
+                    // Approaching budget
+                    progressBar.classList.add('warning');
+                    if (budgetWarning) {
+                        budgetWarning.className = 'budget-warning warning';
+                        warningMessage.textContent = `⚠️ You've used ${percentageUsed.toFixed(1)}% of your budget`;
+                        budgetWarning.style.display = 'flex';
+                    }
+                    
+                } else {
+                    // Under budget
+                    if (budgetWarning) budgetWarning.style.display = 'none';
+                }
+            }
+            
+        } else {
+            // No budget set
+            if (budgetDisplay) budgetDisplay.style.display = 'none';
+            if (budgetForm) budgetForm.style.display = 'none';
+            if (setBudgetBtn) setBudgetBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Set Budget';
+        }
+    }
+
+    /**
+     * Show/hide budget form
+     * @param {boolean} show - Whether to show the form
+     */
+    function showBudgetForm(show) {
+        const budgetDisplay = document.getElementById('budgetDisplay');
+        const budgetForm = document.getElementById('budgetForm');
+        const setBudgetBtn = document.getElementById('setBudgetBtn');
+        
+        if (show) {
+            if (budgetDisplay) budgetDisplay.style.display = 'none';
+            if (budgetForm) budgetForm.style.display = 'block';
+            if (setBudgetBtn) setBudgetBtn.style.display = 'none';
+            
+            // Pre-fill with current budget if exists
+            const budgetInput = document.getElementById('monthlyBudget');
+            if (budgetInput && currentBudget > 0) {
+                budgetInput.value = currentBudget;
+            }
+        } else {
+            if (budgetForm) budgetForm.style.display = 'none';
+            if (setBudgetBtn) setBudgetBtn.style.display = 'flex';
+            if (currentBudget > 0 && budgetDisplay) {
+                budgetDisplay.style.display = 'block';
+            }
+        }
     }
 
     // ===== CHART FUNCTIONS =====
@@ -409,6 +629,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Load user's currency preference
             await loadUserCurrency(user.uid);
             
+            // Load user's budget
+            await loadUserBudget(user.uid);
+            
+            // Calculate monthly spending
+            await calculateMonthlySpending();
+            
             // Load expenses
             await loadExpenses(user.uid);
             
@@ -439,8 +665,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (saved) {
                 selectedCurrency = newCurrency;
                 
+                // Update currency symbol in budget form
+                if (currencySymbolEl) {
+                    currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
+                }
+                
                 // Refresh display with new currency
                 await loadExpenses(currentUser.uid);
+                
+                // Update budget display with new currency
+                updateBudgetDisplay();
                 
                 // Show confirmation
                 const currencyName = currencySelect.options[currencySelect.selectedIndex].text;
@@ -497,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             
             try {
-                // Create expense data - store amount in base currency (always as number)
+                // Create expense data
                 const expenseData = {
                     amount: amount,
                     category: category,
@@ -520,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('date').value = today;
                 
-                // Show success message with current currency
+                // Show success message
                 showNotification(`Expense added successfully! (${formatAmount(amount)})`, 'success');
                 
                 // Reload expenses
@@ -556,7 +790,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 updateStats([]);
-                updateCharts([]); // Update charts with empty data
+                updateCharts([]);
+                
+                // Recalculate monthly spending for budget
+                await calculateMonthlySpending();
+                updateBudgetDisplay();
                 return;
             }
             
@@ -595,7 +833,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update stats and charts
             updateStats(expenses);
-            updateCharts(expenses); // Update charts with expense data
+            updateCharts(expenses);
+            
+            // Recalculate monthly spending for budget
+            await calculateMonthlySpending();
+            updateBudgetDisplay();
             
         } catch (error) {
             console.error("❌ Error loading expenses:", error);
@@ -791,6 +1033,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== BUDGET EVENT LISTENERS =====
+
+    // Set/Edit Budget button
+    if (setBudgetBtn) {
+        setBudgetBtn.addEventListener('click', () => {
+            showBudgetForm(true);
+        });
+    }
+
+    // Save Budget button
+    if (saveBudgetBtn) {
+        saveBudgetBtn.addEventListener('click', async () => {
+            const budgetInput = document.getElementById('monthlyBudget');
+            const budget = parseFloat(budgetInput.value);
+            
+            if (isNaN(budget) || budget < 0) {
+                showNotification('Please enter a valid budget amount', 'error');
+                return;
+            }
+            
+            await saveUserBudget(budget);
+        });
+    }
+
+    // Cancel Budget button
+    if (cancelBudgetBtn) {
+        cancelBudgetBtn.addEventListener('click', () => {
+            showBudgetForm(false);
+        });
+    }
+
+    // Allow Enter key to submit budget
+    if (budgetInput) {
+        budgetInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (saveBudgetBtn) saveBudgetBtn.click();
+            }
+        });
+    }
+
     // ===== UPDATE STATS =====
     function updateStats(expenses) {
         if (!totalExpensesSpan) return;
@@ -868,8 +1151,10 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', async function() {
             try {
                 await signOut(auth);
-                // Clear currency preference from memory
+                // Clear preferences from memory
                 selectedCurrency = 'USD';
+                currentBudget = 0;
+                currentMonthSpent = 0;
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error("Logout error:", error);
