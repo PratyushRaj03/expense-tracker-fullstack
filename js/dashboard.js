@@ -34,10 +34,93 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelEditBtn = document.getElementById('cancelEdit');
     const editForm = document.getElementById('editExpenseForm');
     
+    // Currency elements
+    const currencySelect = document.getElementById('currencySelect');
+    
+    // State variables
     let currentUser = null;
+    let selectedCurrency = 'USD'; // Default currency
+    let currencySymbols = {
+        'USD': '$',
+        'INR': '₹',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CAD': 'C$',
+        'AUD': 'A$'
+    };
+
+    // ===== CURRENCY FUNCTIONS =====
+    
+    /**
+     * Load user's currency preference from Firestore
+     * @param {string} userId - The user's UID
+     */
+    async function loadUserCurrency(userId) {
+        try {
+            const userRef = doc(db, "users", userId);
+            const userSnap = await getDoc(userRef);
+            
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                if (userData.preferredCurrency) {
+                    selectedCurrency = userData.preferredCurrency;
+                    
+                    // Update dropdown
+                    if (currencySelect) {
+                        currencySelect.value = selectedCurrency;
+                    }
+                    
+                    console.log("💰 Loaded currency preference:", selectedCurrency);
+                }
+            }
+        } catch (error) {
+            console.error("Error loading currency preference:", error);
+        }
+    }
+
+    /**
+     * Save user's currency preference to Firestore
+     * @param {string} userId - The user's UID
+     * @param {string} currency - The selected currency code
+     * @returns {boolean} - Success status
+     */
+    async function saveUserCurrency(userId, currency) {
+        try {
+            const userRef = doc(db, "users", userId);
+            await updateDoc(userRef, {
+                preferredCurrency: currency,
+                updatedAt: new Date().toISOString()
+            });
+            console.log("✅ Currency preference saved:", currency);
+            return true;
+        } catch (error) {
+            console.error("❌ Error saving currency preference:", error);
+            return false;
+        }
+    }
+
+    /**
+     * Format amount with currency symbol
+     * @param {number} amount - The amount to format
+     * @param {string} currency - Currency code (defaults to selectedCurrency)
+     * @returns {string} - Formatted amount with symbol
+     */
+    function formatAmount(amount, currency = selectedCurrency) {
+        const symbol = currencySymbols[currency] || '$';
+        
+        // Handle different currency formatting if needed
+        if (currency === 'INR') {
+            // For Indian Rupees, you could add lakh/crore formatting here
+            return `${symbol} ${amount.toFixed(2)}`;
+        }
+        
+        // Default formatting
+        return `${symbol}${amount.toFixed(2)}`;
+    }
 
     // ===== CHECK AUTHENTICATION =====
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log("✅ User authenticated:", user.uid);
             currentUser = user;
@@ -46,8 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userNameSpan) userNameSpan.textContent = user.displayName || 'User';
             if (userEmailSpan) userEmailSpan.textContent = user.email;
             
+            // Load user's currency preference
+            await loadUserCurrency(user.uid);
+            
             // Load expenses
-            loadExpenses(user.uid);
+            await loadExpenses(user.uid);
             
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
@@ -59,6 +145,36 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'index.html';
         }
     });
+
+    // ===== CURRENCY CHANGE LISTENER =====
+    if (currencySelect) {
+        currencySelect.addEventListener('change', async function() {
+            const newCurrency = this.value;
+            
+            if (!currentUser) {
+                showNotification('Please log in first', 'error');
+                return;
+            }
+            
+            // Save to Firestore
+            const saved = await saveUserCurrency(currentUser.uid, newCurrency);
+            
+            if (saved) {
+                selectedCurrency = newCurrency;
+                
+                // Refresh display with new currency
+                await loadExpenses(currentUser.uid);
+                
+                // Show confirmation
+                const currencyName = currencySelect.options[currencySelect.selectedIndex].text;
+                showNotification(`Currency changed to ${currencyName}`, 'success');
+            } else {
+                showNotification('Failed to save currency preference', 'error');
+                // Revert dropdown
+                currencySelect.value = selectedCurrency;
+            }
+        });
+    }
 
     // ===== ADD EXPENSE FORM SUBMISSION =====
     if (expenseForm) {
@@ -104,7 +220,8 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             
             try {
-                // Create expense data
+                // Create expense data - store amount in base currency (always as number)
+                // The currency is stored in user preference, not per expense
                 const expenseData = {
                     amount: amount,
                     category: category,
@@ -112,6 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     date: date,
                     createdAt: new Date().toISOString(),
                     userId: currentUser.uid
+                    // Note: We don't store currency per expense
+                    // All expenses are in user's preferred currency at the time
                 };
                 
                 // Add to Firestore
@@ -127,8 +246,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('date').value = today;
                 
-                // Show success message
-                showNotification('Expense added successfully!', 'success');
+                // Show success message with current currency
+                showNotification(`Expense added successfully! (${formatAmount(amount)})`, 'success');
                 
                 // Reload expenses
                 await loadExpenses(currentUser.uid);
@@ -183,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${formatDate(expense.date)}</td>
                         <td><span class="category-badge category-${categoryClass}">${expense.category}</span></td>
                         <td>${expense.description}</td>
-                        <td class="amount-positive">$${expense.amount.toFixed(2)}</td>
+                        <td class="amount-positive">${formatAmount(expense.amount)}</td>
                         <td>
                             <button onclick="editExpense('${expense.id}')" class="action-btn edit-btn">
                                 <i class="fas fa-edit"></i>
@@ -199,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</tbody></table>';
             expensesContainer.innerHTML = html;
             
-            // Update stats
+            // Update stats with currency
             updateStats(expenses);
             
         } catch (error) {
@@ -284,6 +403,12 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editDescription').value = expense.description;
             document.getElementById('editDate').value = expense.date;
             
+            // Update amount label to show current currency
+            const amountLabel = document.querySelector('label[for="editAmount"]');
+            if (amountLabel) {
+                amountLabel.innerHTML = `Amount (${currencySymbols[selectedCurrency] || '$'})`;
+            }
+            
             // Show the modal
             editModal.style.display = 'block';
             
@@ -320,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("✅ Expense updated successfully!");
             
             closeEditModal();
-            showNotification('Expense updated successfully!', 'success');
+            showNotification(`Expense updated successfully! (${formatAmount(updatedData.amount)})`, 'success');
             await loadExpenses(currentUser.uid);
             
         } catch (error) {
@@ -395,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!totalExpensesSpan) return;
         
         const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-        totalExpensesSpan.textContent = `$${total.toFixed(2)}`;
+        totalExpensesSpan.textContent = formatAmount(total);
         
         // Monthly total
         const now = new Date();
@@ -410,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .reduce((sum, exp) => sum + exp.amount, 0);
         
         if (monthlyTotalSpan) {
-            monthlyTotalSpan.textContent = `$${monthlyTotal.toFixed(2)}`;
+            monthlyTotalSpan.textContent = formatAmount(monthlyTotal);
         }
         
         // Category count
@@ -448,11 +573,14 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.style.color = 'white';
         notification.style.zIndex = '9999';
         notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '10px';
         
         document.body.appendChild(notification);
         
         setTimeout(() => {
-            notification.style.animation = 'slideIn 0.3s ease reverse';
+            notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => {
                 notification.remove();
             }, 300);
@@ -464,6 +592,8 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', async function() {
             try {
                 await signOut(auth);
+                // Clear currency preference from memory
+                selectedCurrency = 'USD';
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error("Logout error:", error);
