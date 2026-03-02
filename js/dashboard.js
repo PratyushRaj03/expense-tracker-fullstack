@@ -50,6 +50,41 @@ document.addEventListener('DOMContentLoaded', function() {
         'AUD': 'A$'
     };
 
+    // ===== CHART.JS VARIABLES =====
+    let categoryChartInstance = null;
+    let monthlyChartInstance = null;
+    
+    const chartColors = [
+        '#4361ee', '#f72585', '#4cc9f0', '#f8961e', '#f9c74f',
+        '#90be6d', '#577590', '#b5179e', '#2b9348', '#ee6c4d'
+    ];
+
+    // ===== ADD EMPTY CHART STYLES =====
+    const chartEmptyStyles = `
+        .empty-chart {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 12px;
+            color: var(--gray-color);
+            font-size: 14px;
+            min-height: 200px;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .empty-chart {
+                background: rgba(255, 255, 255, 0.02);
+            }
+        }
+    `;
+    
+    // Add the styles to the document
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = chartEmptyStyles;
+    document.head.appendChild(styleSheet);
+
     // ===== CURRENCY FUNCTIONS =====
     
     /**
@@ -117,6 +152,248 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Default formatting
         return `${symbol}${amount.toFixed(2)}`;
+    }
+
+    // ===== CHART FUNCTIONS =====
+
+    /**
+     * Process expenses for category chart
+     * @param {Array} expenses - List of expenses
+     * @returns {Object} - Categories and amounts
+     */
+    function processCategoryData(expenses) {
+        const categoryMap = new Map();
+        
+        expenses.forEach(expense => {
+            const category = expense.category;
+            const amount = expense.amount;
+            
+            if (categoryMap.has(category)) {
+                categoryMap.set(category, categoryMap.get(category) + amount);
+            } else {
+                categoryMap.set(category, amount);
+            }
+        });
+        
+        // Sort by amount (highest first)
+        const sortedEntries = Array.from(categoryMap.entries())
+            .sort((a, b) => b[1] - a[1]);
+        
+        return {
+            labels: sortedEntries.map(entry => entry[0]),
+            data: sortedEntries.map(entry => entry[1])
+        };
+    }
+
+    /**
+     * Process expenses for monthly chart (last 6 months)
+     * @param {Array} expenses - List of expenses
+     * @returns {Object} - Months and amounts
+     */
+    function processMonthlyData(expenses) {
+        const monthMap = new Map();
+        const months = [];
+        
+        // Get last 6 months
+        const today = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+            const monthLabel = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+            
+            monthMap.set(monthKey, {
+                label: monthLabel,
+                total: 0
+            });
+            months.push(monthKey);
+        }
+        
+        // Aggregate expenses by month
+        expenses.forEach(expense => {
+            const expenseDate = new Date(expense.date);
+            const monthKey = `${expenseDate.getFullYear()}-${expenseDate.getMonth() + 1}`;
+            
+            if (monthMap.has(monthKey)) {
+                const monthData = monthMap.get(monthKey);
+                monthData.total += expense.amount;
+                monthMap.set(monthKey, monthData);
+            }
+        });
+        
+        // Prepare data for chart
+        const labels = [];
+        const data = [];
+        
+        months.forEach(monthKey => {
+            const monthData = monthMap.get(monthKey);
+            labels.push(monthData.label);
+            data.push(monthData.total);
+        });
+        
+        return { labels, data };
+    }
+
+    /**
+     * Create or update category pie chart
+     * @param {Array} expenses - List of expenses
+     */
+    function renderCategoryChart(expenses) {
+        const canvas = document.getElementById('categoryChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentNode;
+        
+        // Destroy existing chart instance
+        if (categoryChartInstance) {
+            categoryChartInstance.destroy();
+        }
+        
+        const categoryData = processCategoryData(expenses);
+        
+        if (categoryData.labels.length === 0) {
+            // Show empty state
+            canvas.style.display = 'none';
+            let emptyDiv = container.querySelector('.empty-chart');
+            if (!emptyDiv) {
+                emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-chart';
+                container.appendChild(emptyDiv);
+            }
+            emptyDiv.innerHTML = '<p>No category data yet</p>';
+            return;
+        }
+        
+        // Hide empty state if visible
+        canvas.style.display = 'block';
+        const emptyDiv = container.querySelector('.empty-chart');
+        if (emptyDiv) emptyDiv.remove();
+        
+        // Create new chart
+        categoryChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: categoryData.labels,
+                datasets: [{
+                    data: categoryData.data,
+                    backgroundColor: chartColors.slice(0, categoryData.labels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: getComputedStyle(document.body).getPropertyValue('--dark-color').trim() || '#333',
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${formatAmount(value)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Create or update monthly bar chart
+     * @param {Array} expenses - List of expenses
+     */
+    function renderMonthlyChart(expenses) {
+        const canvas = document.getElementById('monthlyChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentNode;
+        
+        // Destroy existing chart instance
+        if (monthlyChartInstance) {
+            monthlyChartInstance.destroy();
+        }
+        
+        const monthlyData = processMonthlyData(expenses);
+        
+        // Check if all data is zero
+        const hasData = monthlyData.data.some(value => value > 0);
+        
+        if (!hasData) {
+            // Show empty state
+            canvas.style.display = 'none';
+            let emptyDiv = container.querySelector('.empty-chart');
+            if (!emptyDiv) {
+                emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-chart';
+                container.appendChild(emptyDiv);
+            }
+            emptyDiv.innerHTML = '<p>No monthly data yet</p>';
+            return;
+        }
+        
+        // Hide empty state if visible
+        canvas.style.display = 'block';
+        const emptyDiv = container.querySelector('.empty-chart');
+        if (emptyDiv) emptyDiv.remove();
+        
+        // Create new chart
+        monthlyChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [{
+                    label: 'Spending',
+                    data: monthlyData.data,
+                    backgroundColor: chartColors[0],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Total: ${formatAmount(context.raw)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatAmount(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Update all charts with new expense data
+     * @param {Array} expenses - List of expenses
+     */
+    function updateCharts(expenses) {
+        renderCategoryChart(expenses);
+        renderMonthlyChart(expenses);
     }
 
     // ===== CHECK AUTHENTICATION =====
@@ -221,7 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 // Create expense data - store amount in base currency (always as number)
-                // The currency is stored in user preference, not per expense
                 const expenseData = {
                     amount: amount,
                     category: category,
@@ -229,8 +505,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     date: date,
                     createdAt: new Date().toISOString(),
                     userId: currentUser.uid
-                    // Note: We don't store currency per expense
-                    // All expenses are in user's preferred currency at the time
                 };
                 
                 // Add to Firestore
@@ -282,6 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 updateStats([]);
+                updateCharts([]); // Update charts with empty data
                 return;
             }
             
@@ -318,8 +593,9 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</tbody></table>';
             expensesContainer.innerHTML = html;
             
-            // Update stats with currency
+            // Update stats and charts
             updateStats(expenses);
+            updateCharts(expenses); // Update charts with expense data
             
         } catch (error) {
             console.error("❌ Error loading expenses:", error);
@@ -616,6 +892,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentUser) loadExpenses(currentUser.uid);
         });
     }
+
+    // ===== DARK MODE SUPPORT FOR CHARTS =====
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    darkModeMediaQuery.addEventListener('change', () => {
+        if (currentUser) {
+            loadExpenses(currentUser.uid);
+        }
+    });
 
     // Make functions globally available for onclick handlers
     window.deleteExpense = deleteExpense;
