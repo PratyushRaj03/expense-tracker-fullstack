@@ -277,7 +277,7 @@ body {
 
 .section-header h2 {
     font-size: 20px;
-    color: var(--dark-color);
+    color: var(--light-color);
     font-weight: 600;
 }
 
@@ -878,5 +878,71 @@ body {
     
     .currency-dropdown {
         flex: 1;
+    }
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 25px;
+    box-shadow: var(--shadow-xl);
+    animation: fadeIn 0.5s ease;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.chart-header i {
+    font-size: 24px;
+    color: var(--primary-color);
+    background: rgba(67, 97, 238, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.chart-header h3 {
+    font-size: 18px;
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .chart-card {
+        background: rgba(30, 41, 59, 0.95);
+    }
+    
+    .chart-header h3 {
+        color: var(--light-color);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        height: 250px;
     }
 }
