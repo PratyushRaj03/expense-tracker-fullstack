@@ -85,6 +85,77 @@
                 </div>
             </div>
         </div>
+
+        <!-- Monthly Budget Section -->
+        <div class="budget-section">
+            <div class="budget-header">
+                <div class="budget-title">
+                    <i class="fas fa-wallet"></i>
+                    <h3>Monthly Budget</h3>
+                </div>
+                <div class="budget-actions">
+                    <button id="setBudgetBtn" class="budget-set-btn">
+                        <i class="fas fa-pencil-alt"></i> Set Budget
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Budget Display (shown when budget exists) -->
+            <div id="budgetDisplay" class="budget-display" style="display: none;">
+                <div class="budget-info">
+                    <div class="budget-item">
+                        <span class="budget-label">Budget:</span>
+                        <span class="budget-value" id="budgetAmount">$0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Spent:</span>
+                        <span class="budget-value" id="budgetSpent">$0</span>
+                    </div>
+                    <div class="budget-item">
+                        <span class="budget-label">Remaining:</span>
+                        <span class="budget-value" id="budgetRemaining">$0</span>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar" id="budgetProgressBar" style="width: 0%;"></div>
+                </div>
+                
+                <!-- Warning Message -->
+                <div id="budgetWarning" class="budget-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="warningMessage"></span>
+                </div>
+            </div>
+            
+            <!-- Budget Form (shown when setting budget) -->
+            <div id="budgetForm" class="budget-form" style="display: none;">
+                <div class="form-group">
+                    <label for="monthlyBudget">Enter Monthly Budget</label>
+                    <div class="budget-input-group">
+                        <span class="currency-symbol" id="budgetCurrencySymbol">$</span>
+                        <input 
+                            type="number" 
+                            id="monthlyBudget" 
+                            class="budget-input"
+                            step="100" 
+                            min="0" 
+                            placeholder="0.00"
+                        >
+                    </div>
+                </div>
+                <div class="budget-form-actions">
+                    <button id="saveBudgetBtn" class="save-budget-btn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button id="cancelBudgetBtn" class="cancel-budget-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="charts-grid">
             <div class="chart-card">
                 <div class="chart-header">
