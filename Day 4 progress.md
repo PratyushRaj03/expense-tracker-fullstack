@@ -46,6 +46,46 @@ Implemented complete CRUD operations for managing user expenses.
 
 ---
 
+### 📊 Analytics Dashboard
+
+- Integrated **Chart.js** for financial analytics
+- Implemented **Category Spending Pie Chart**
+- Implemented **Monthly Spending Bar Chart**
+- Charts dynamically update when expenses change
+- Added empty state handling for charts
+
+---
+
+### 💱 Currency Management
+
+- Added **currency selector** to dashboard
+- Supported currencies: USD, INR, EUR, GBP, JPY, CAD, AUD
+- Stored user currency preference in **Firestore**
+- Amounts automatically display with selected currency symbol
+- Currency preference persists across sessions
+
+---
+
+### 🎯 Monthly Budget System
+
+- Implemented **monthly budget feature**
+- Users can set and update a monthly budget
+- Budget stored in Firestore user document
+- Calculated **current month spending**
+- Implemented **budget usage progress bar**
+- Warning system:
+  - Yellow warning at **80% usage**
+  - Red warning at **100% usage**
+  - Budget exceeded warning above **110%**
+
+---
+
+### 🔄 Real-Time Dashboard Updates
+
+- Dashboard stats update automatically
+- Charts refresh dynamically after expense changes
+- Budget calculations update instantly when expenses are added, edited, or deleted
+
 ## 📚 Key Learnings
 
 - Firestore document and collection structure
@@ -55,5 +95,3 @@ Implemented complete CRUD operations for managing user expenses.
 
 ---
 
-🚀 Next Step:
-Implement **Expense Analytics Dashboard using Chart.js** to visualize user spending patterns.
