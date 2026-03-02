@@ -1243,3 +1243,164 @@ body {
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.theme-toggle-btn i {
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle-btn .fa-sun {
+    color: #f59e0b;
+}
+
+.theme-toggle-btn .fa-moon {
+    color: #6366f1;
+}
+
+/* Light mode specific */
+body.light-mode .theme-toggle-btn {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .theme-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Dark mode specific */
+body.dark-mode .theme-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Theme toggle text */
+.theme-toggle-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .theme-toggle-btn span {
+        display: none;
+    }
+    
+    .theme-toggle-btn {
+        padding: 8px 12px;
+    }
+}
+
+/* Export Buttons */
+.export-buttons {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.export-btn i {
+    font-size: 16px;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.csv-btn {
+    color: #2e7d32;
+    border: 1px solid #2e7d32;
+}
+
+.csv-btn:hover {
+    background: #2e7d32;
+    color: white;
+}
+
+.pdf-btn {
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+}
+
+.pdf-btn:hover {
+    background: #d32f2f;
+    color: white;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .export-btn {
+        background: var(--dark-color);
+        border-color: #334155;
+        color: var(--light-color);
+    }
+    
+    .csv-btn {
+        color: #81c784;
+        border-color: #81c784;
+    }
+    
+    .csv-btn:hover {
+        background: #81c784;
+        color: var(--dark-color);
+    }
+    
+    .pdf-btn {
+        color: #ef9a9a;
+        border-color: #ef9a9a;
+    }
+    
+    .pdf-btn:hover {
+        background: #ef9a9a;
+        color: var(--dark-color);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .export-buttons {
+        margin: 10px 0;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .export-btn span {
+        display: none;
+    }
+    
+    .export-btn {
+        padding: 8px 12px;
+    }
+}
