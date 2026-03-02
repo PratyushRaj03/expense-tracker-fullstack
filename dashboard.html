@@ -27,13 +27,15 @@
     <div class="dashboard-container">
         <!-- Welcome Header -->
         <div class="dashboard-header">
+            <!-- In dashboard.html, find the header-actions div and add the theme toggle -->
+
             <div class="dashboard-header">
                 <div class="welcome-text">
                     <h1>Welcome, <span id="userName">User</span>!</h1>
                     <p id="userEmail">Loading...</p>
                 </div>
                 <div class="header-actions">
-                    <!-- ===== ADD THIS CURRENCY SELECTOR ===== -->
+                    <!-- Currency Selector (existing) -->
                     <div class="currency-selector">
                         <label for="currencySelect">Currency:</label>
                         <select id="currencySelect" class="currency-dropdown">
@@ -46,11 +48,28 @@
                             <option value="AUD">🇦🇺 AUD ($)</option>
                         </select>
                     </div>
-                    <!-- ===== END CURRENCY SELECTOR ===== -->
+                    
+                    <!-- ===== NEW: Theme Toggle Button ===== -->
+                    <button id="themeToggle" class="theme-toggle-btn">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                        <span class="theme-toggle-text">Light</span>
+                    </button>
+                    <!-- ===== END THEME TOGGLE ===== -->
                     
                     <button id="logoutBtn" class="logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
+                    <div class="export-buttons">
+                        <button id="exportCSVBtn" class="export-btn csv-btn">
+                            <i class="fas fa-file-csv"></i>
+                            <span>CSV</span>
+                        </button>
+                        <button id="exportPDFBtn" class="export-btn pdf-btn">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>PDF</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -331,6 +350,11 @@
     </div>
 
     <!-- Scripts -->
+     <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- jsPDF-AutoTable plugin for tables in PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script type="module" src="js/dashboard.js"></script>
 </body>
