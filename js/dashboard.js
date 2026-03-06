@@ -68,8 +68,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let monthlyChartInstance = null;
     
     const chartColors = [
-        '#4361ee', '#f72585', '#4cc9f0', '#f8961e', '#f9c74f',
-        '#90be6d', '#577590', '#b5179e', '#2b9348', '#ee6c4d'
+        '#6366F1', // indigo
+        '#F43F5E', // rose
+        '#10B981', // emerald
+        '#F59E0B', // amber
+        '#3B82F6', // blue
+        '#EC4899', // pink
+        '#14B8A6', // teal
+        '#8B5CF6', // violet
+        '#EF4444', // red
+        '#22C55E', // green
     ];
     
     let currencySymbols = {
@@ -137,15 +145,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateThemeIcons(theme) {
-        if (theme === 'dark') {
-            if (sunIcon) sunIcon.style.display = 'none';
-            if (moonIcon) moonIcon.style.display = 'inline-block';
-            if (themeToggleText) themeToggleText.textContent = 'Dark';
-        } else {
-            if (sunIcon) sunIcon.style.display = 'inline-block';
-            if (moonIcon) moonIcon.style.display = 'none';
-            if (themeToggleText) themeToggleText.textContent = 'Light';
-        }
+        // Icon visibility is handled by CSS (body.dark-mode / body.light-mode rules)
+        // Just clear any inline styles that might override CSS
+        if (sunIcon) sunIcon.style.display = '';
+        if (moonIcon) moonIcon.style.display = '';
+        if (themeToggleText) themeToggleText.textContent = theme === 'dark' ? 'Dark' : 'Light';
     }
     
     function toggleTheme() {
@@ -217,12 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatAmount(amount, currency = selectedCurrency) {
         const symbol = currencySymbols[currency] || '$';
+        const formattedNumber = formatAmountWithCommas(amount);
         
         if (currency === 'INR') {
-            return `${symbol} ${amount.toFixed(2)}`;
+            return `${symbol} ${formattedNumber}`;
         }
-        
-        return `${symbol}${amount.toFixed(2)}`;
+        return `${symbol}${formattedNumber}`;
     }
 
     // ===== BUDGET FUNCTIONS =====
@@ -491,35 +495,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const emptyDiv = container.querySelector('.empty-chart');
         if (emptyDiv) emptyDiv.remove();
         
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#94A3B8' : '#475569';
+        const bgColor = isDark ? '#131929' : '#FFFFFF';
+
         categoryChartInstance = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: categoryData.labels,
                 datasets: [{
                     data: categoryData.data,
                     backgroundColor: chartColors.slice(0, categoryData.labels.length),
-                    borderWidth: 0
+                    borderColor: bgColor,
+                    borderWidth: 3,
+                    hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '62%',
                 plugins: {
                     legend: {
                         position: 'right',
                         labels: {
-                            color: getComputedStyle(document.body).getPropertyValue('--dark-color').trim() || '#333',
-                            font: { size: 12 }
+                            color: textColor,
+                            font: { size: 12, family: "'DM Sans', sans-serif", weight: '500' },
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 8,
+                            boxHeight: 8
                         }
                     },
                     tooltip: {
+                        backgroundColor: isDark ? '#1A2236' : '#ffffff',
+                        titleColor: isDark ? '#F1F5F9' : '#0F172A',
+                        bodyColor: isDark ? '#94A3B8' : '#475569',
+                        borderColor: isDark ? '#1E2D45' : '#E4E8EF',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${formatAmount(value)} (${percentage}%)`;
+                                return `  ${label}: ${formatAmount(value)} (${percentage}%)`;
                             }
                         }
                     }
@@ -559,6 +582,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const emptyDiv = container.querySelector('.empty-chart');
         if (emptyDiv) emptyDiv.remove();
         
+        const isDarkBar = document.body.classList.contains('dark-mode');
+        const textColorBar = isDarkBar ? '#94A3B8' : '#475569';
+        const gridColorBar = isDarkBar ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+        // Build gradient fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, '#6366F1');
+        gradient.addColorStop(1, '#818CF8');
+
         monthlyChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -566,29 +598,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Spending',
                     data: monthlyData.data,
-                    backgroundColor: chartColors[0],
-                    borderRadius: 6
+                    backgroundColor: gradient,
+                    hoverBackgroundColor: '#4F46E5',
+                    borderRadius: 8,
+                    borderSkipped: false,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
+                        backgroundColor: isDarkBar ? '#1A2236' : '#ffffff',
+                        titleColor: isDarkBar ? '#F1F5F9' : '#0F172A',
+                        bodyColor: isDarkBar ? '#94A3B8' : '#475569',
+                        borderColor: isDarkBar ? '#1E2D45' : '#E4E8EF',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
-                                return `Total: ${formatAmount(context.raw)}`;
+                                return `  Total: ${formatAmount(context.raw)}`;
                             }
                         }
                     }
                 },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColorBar, font: { size: 11, family: "'DM Sans', sans-serif" } },
+                        border: { display: false }
+                    },
                     y: {
                         beginAtZero: true,
+                        grid: { color: gridColorBar },
+                        border: { display: false, dash: [4, 4] },
                         ticks: {
+                            color: textColorBar,
+                            font: { size: 11, family: "'DM Sans', sans-serif" },
                             callback: function(value) {
                                 return formatAmount(value);
                             }
@@ -606,20 +654,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== EXPORT FUNCTIONS =====
 
-    /**
-     * Get filtered expenses based on current filter selections
-     * @returns {Array} - Filtered expenses array
-     */
     function getFilteredExpenses() {
         let filtered = [...window.allExpenses];
         
-        // Apply category filter
         const categoryFilter = document.getElementById('categoryFilter')?.value;
         if (categoryFilter && categoryFilter !== 'all') {
             filtered = filtered.filter(exp => exp.category === categoryFilter);
         }
         
-        // Apply date filter
         const dateFilter = document.getElementById('dateFilter')?.value;
         if (dateFilter && dateFilter !== 'all') {
             const now = new Date();
@@ -631,16 +673,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 switch(dateFilter) {
                     case 'today':
                         return expDate.toDateString() === today.toDateString();
-                        
                     case 'week':
                         const weekAgo = new Date(today);
                         weekAgo.setDate(weekAgo.getDate() - 7);
                         return expDate >= weekAgo;
-                        
                     case 'month':
                         return expDate.getMonth() === now.getMonth() && 
-                               expDate.getFullYear() === now.getFullYear();
-                        
+                            expDate.getFullYear() === now.getFullYear();
                     default:
                         return true;
                 }
@@ -650,57 +689,73 @@ document.addEventListener('DOMContentLoaded', function() {
         return filtered;
     }
 
-    /**
-     * Prepare expense data for export
-     * @param {Array} expenses - Array of expense objects
-     * @returns {Array} - Formatted data for export
-     */
-    function prepareExportData(expenses) {
-        return expenses.map(exp => ({
-            Date: formatDateForExport(exp.date),
-            Category: exp.category,
-            Description: exp.description,
-            Amount: formatAmount(exp.amount)
-        }));
-    }
-
-    /**
-     * Format date for export (YYYY-MM-DD)
-     * @param {string} dateString - Original date string
-     * @returns {string} - Formatted date
-     */
-    function formatDateForExport(dateString) {
+    // ===== DATE FORMATTING FUNCTIONS =====
+    
+    // For PDF display (02 Mar 2026)
+    function formatDateForDisplay(dateString) {
         const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return date.toLocaleDateString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }).replace(/,/g, '');
     }
 
-    /**
-     * Calculate totals for report
-     * @param {Array} expenses - Array of expenses
-     * @returns {Object} - Total and other statistics
-     */
+    // For CSV export — prefix with \t forces Excel to treat the cell as plain text,
+    // preventing auto-conversion to a Date serial (which causes ########)
+    function formatDateForCSV(dateString) {
+        const date = new Date(dateString);
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+        return `\t${day} ${month} ${year}`;
+    }
+
+    // ===== AMOUNT FORMATTING FUNCTIONS =====
+    
+    function formatAmountWithCommas(amount) {
+        const num = parseFloat(amount);
+        if (isNaN(num)) return '0.00';
+        
+        const parts = num.toFixed(2).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    }
+
+    function formatAmountForCSV(amount) {
+        return amount.toFixed(2);
+    }
+
     function calculateReportTotals(expenses) {
         const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
         
-        // Category breakdown
         const categoryTotals = {};
         expenses.forEach(exp => {
             categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
         });
         
         return {
-            total: formatAmount(total),
+            total: total,
+            totalFormatted: formatAmount(total),
+            totalWithCommas: formatAmountWithCommas(total),
             count: expenses.length,
-            categoryTotals
+            categoryTotals: categoryTotals,
+            categoryTotalsFormatted: Object.fromEntries(
+                Object.entries(categoryTotals).map(([cat, amt]) => [cat, formatAmount(amt)])
+            )
         };
     }
 
-    /**
-     * Export expenses as CSV file
-     */
+    // ===== CSV EXPORT =====
+
+    // Helper: wrap a value in quotes, escaping any internal quotes
+    function csvCell(value) {
+        const str = String(value == null ? '' : value);
+        // Always quote so commas/symbols inside values don't break columns
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
     function exportToCSV() {
         const expenses = getFilteredExpenses();
         
@@ -710,51 +765,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            // Prepare data
-            const exportData = prepareExportData(expenses);
-            
-            // Create CSV headers
-            const headers = ['Date', 'Category', 'Description', 'Amount'];
-            
-            // Convert to CSV string
-            const csvRows = [];
-            
-            // Add headers
-            csvRows.push(headers.join(','));
-            
-            // Add data rows
-            exportData.forEach(row => {
-                // Escape commas and quotes in description
-                const escapedDescription = row.Description.replace(/"/g, '""');
-                const values = [
-                    row.Date,
-                    row.Category,
-                    `"${escapedDescription}"`, // Wrap in quotes to handle commas
-                    row.Amount
-                ];
-                csvRows.push(values.join(','));
-            });
-            
-            // Add summary row
             const totals = calculateReportTotals(expenses);
-            csvRows.push(''); // Empty row
-            csvRows.push(`Total Expenses,,,${totals.total}`);
-            csvRows.push(`Number of Transactions,,,${totals.count}`);
-            
-            // Create blob and download
-            const csvString = csvRows.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv' });
+
+            const rows = [];
+
+            // Header section — every cell quoted so commas in dates/amounts don't split columns
+            rows.push([csvCell('EXPENSE REPORT'), ''].join(','));
+            rows.push([csvCell('Generated on'), csvCell(formatDateForCSV(new Date().toISOString().split('T')[0]))].join(','));
+            rows.push([csvCell('Currency'), csvCell(selectedCurrency)].join(','));
+            // Use plain number (no comma-formatting) so Excel reads it as a number, not two cells
+            rows.push([csvCell('Total Expenses'), csvCell(totals.total.toFixed(2))].join(','));
+            rows.push([csvCell('Number of Transactions'), csvCell(totals.count)].join(','));
+            rows.push('');
+
+            // Column headers
+            rows.push(['Date', 'Category', 'Description', 'Amount'].map(csvCell).join(','));
+
+            // Expense rows
+            expenses.forEach(exp => {
+                rows.push([
+                    csvCell(formatDateForCSV(exp.date)),   // quoted date prevents #### in Excel
+                    csvCell(exp.category),
+                    csvCell(exp.description),
+                    csvCell(exp.amount.toFixed(2))         // plain number, no currency symbol
+                ].join(','));
+            });
+
+            // Category breakdown
+            rows.push('');
+            rows.push([csvCell('CATEGORY BREAKDOWN'), ''].join(','));
+            rows.push(['Category', 'Amount'].map(csvCell).join(','));
+            Object.entries(totals.categoryTotals).forEach(([category, amount]) => {
+                rows.push([csvCell(category), csvCell(amount.toFixed(2))].join(','));
+            });
+
+            // UTF-8 BOM (\uFEFF) makes Excel open the file correctly without garbled characters
+            const csvContent = '\uFEFF' + rows.join('\r\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
-            
-            // Create download link
             const a = document.createElement('a');
             a.href = url;
-            
-            // Generate filename with date
-            const date = new Date().toISOString().split('T')[0];
-            a.download = `expenses_${date}.csv`;
-            
-            // Trigger download
+            a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -768,9 +820,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Export expenses as PDF report
-     */
+    // ===== PDF EXPORT =====
+
     function exportToPDF() {
         const expenses = getFilteredExpenses();
         
@@ -780,7 +831,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            // Initialize jsPDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({
                 orientation: 'portrait',
@@ -788,107 +838,143 @@ document.addEventListener('DOMContentLoaded', function() {
                 format: 'a4'
             });
             
-            // Add title
-            doc.setFontSize(20);
-            doc.setTextColor(67, 97, 238);
-            doc.text('Expense Report', 14, 20);
+            const totals = calculateReportTotals(expenses);
+            const pageWidth = doc.internal.pageSize.getWidth();
             
-            // Add date
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            const reportDate = new Date().toLocaleDateString('en-US', {
+            // Title
+            doc.setFontSize(24);
+            doc.setTextColor(67, 97, 238);
+            doc.setFont('helvetica', 'bold');
+            doc.text('EXPENSE REPORT', 14, 20);
+            
+            // Metadata
+            doc.setFontSize(11);
+            doc.setTextColor(80, 80, 80);
+            doc.setFont('helvetica', 'normal');
+            
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
             });
-            doc.text(`Generated: ${reportDate}`, 14, 28);
             
-            // Add filter info
+            doc.text(`Generated on: ${formattedDate}`, 14, 30);
+            doc.text(`Currency: ${selectedCurrency}`, 14, 37);
+            doc.text(`Total Expenses: ${formatAmountWithCommas(totals.total)} ${selectedCurrency}`, 14, 44);
+            doc.text(`Number of Transactions: ${totals.count}`, 14, 51);
+            
+            // Filter info
             const categoryFilter = document.getElementById('categoryFilter')?.value;
             const dateFilter = document.getElementById('dateFilter')?.value;
             
             let filterText = 'Filters: ';
-            if (categoryFilter && categoryFilter !== 'all') {
-                filterText += `Category: ${categoryFilter} `;
-            }
-            if (dateFilter && dateFilter !== 'all') {
-                filterText += `Period: ${dateFilter}`;
-            }
-            if (filterText === 'Filters: ') {
-                filterText = 'Filters: All expenses';
-            }
+            if (categoryFilter && categoryFilter !== 'all') filterText += `Category: ${categoryFilter} `;
+            if (dateFilter && dateFilter !== 'all') filterText += `Period: ${dateFilter}`;
+            if (filterText === 'Filters: ') filterText = 'Filters: All expenses';
             
-            doc.setFontSize(9);
-            doc.setTextColor(80, 80, 80);
-            doc.text(filterText, 14, 35);
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(filterText, 14, 60);
             
-            // Prepare table data
+            // Expenses table — plain numbers avoid ₹/currency symbol rendering issues in jsPDF
             const tableData = expenses.map(exp => [
-                formatDateForExport(exp.date),
+                formatDateForDisplay(exp.date),
                 exp.category,
                 exp.description,
-                formatAmount(exp.amount)
+                formatAmountWithCommas(exp.amount)
             ]);
             
-            // Add table using autoTable plugin
             doc.autoTable({
-                startY: 40,
-                head: [['Date', 'Category', 'Description', 'Amount']],
+                startY: 65,
+                head: [['Date', 'Category', 'Description', `Amount (${selectedCurrency})`]],
                 body: tableData,
                 theme: 'grid',
                 headStyles: {
                     fillColor: [67, 97, 238],
                     textColor: [255, 255, 255],
                     fontSize: 10,
-                    fontStyle: 'bold'
+                    fontStyle: 'bold',
+                    halign: 'center'
                 },
                 bodyStyles: {
-                    fontSize: 9
+                    fontSize: 9,
+                    textColor: [50, 50, 50]
                 },
                 alternateRowStyles: {
                     fillColor: [245, 245, 245]
                 },
                 columnStyles: {
-                    0: { cellWidth: 30 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 'auto' },
-                    3: { cellWidth: 30, halign: 'right' }
+                    0: { cellWidth: 30, halign: 'center' },
+                    1: { cellWidth: 35, halign: 'left' },
+                    2: { cellWidth: 'auto', halign: 'left' },
+                    3: { cellWidth: 35, halign: 'right' }
                 },
                 margin: { left: 14, right: 14 }
             });
             
-            // Add summary section
-            const finalY = doc.lastAutoTable.finalY + 10;
+            // Summary
+            const finalY = doc.lastAutoTable.finalY + 15;
             
-            const totals = calculateReportTotals(expenses);
-            
-            doc.setFontSize(11);
-            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.setTextColor(67, 97, 238);
+            doc.setFont('helvetica', 'bold');
             doc.text('Summary', 14, finalY);
             
+            doc.setDrawColor(200, 200, 200);
+            doc.setFillColor(250, 250, 250);
+            doc.roundedRect(14, finalY + 5, pageWidth - 28, 20, 3, 3, 'FD');
+            
             doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            doc.text(`Total Expenses: ${totals.total}`, 14, finalY + 8);
-            doc.text(`Number of Transactions: ${totals.count}`, 14, finalY + 16);
+            doc.setTextColor(50, 50, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Total Expenses (${selectedCurrency}): ${formatAmountWithCommas(totals.total)}`, 20, finalY + 15);
             
-            // Category breakdown
-            let categoryY = finalY + 24;
-            doc.text('Category Breakdown:', 14, categoryY);
+            // Category Breakdown
+            const categoryY = finalY + 35;
             
-            let i = 1;
-            for (const [category, amount] of Object.entries(totals.categoryTotals)) {
-                doc.text(`${category}: ${amount}`, 20, categoryY + (i * 7));
-                i++;
-            }
+            doc.setFontSize(14);
+            doc.setTextColor(67, 97, 238);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Category Breakdown', 14, categoryY);
             
-            // Add currency note
+            const categoryData = Object.entries(totals.categoryTotals).map(([cat, amt]) => [
+                cat,
+                formatAmountWithCommas(amt)
+            ]);
+            
+            doc.autoTable({
+                startY: categoryY + 5,
+                head: [['Category', 'Amount']],
+                body: categoryData,
+                theme: 'plain',
+                headStyles: {
+                    fillColor: [240, 240, 240],
+                    textColor: [50, 50, 50],
+                    fontSize: 10,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 9
+                },
+                columnStyles: {
+                    0: { cellWidth: 80, halign: 'left' },
+                    1: { cellWidth: 50, halign: 'right' }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            
+            // Footer
+            const footerY = doc.internal.pageSize.getHeight() - 15;
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
-            doc.text(`All amounts shown in ${selectedCurrency}`, 14, categoryY + (i * 7) + 5);
+            doc.text(
+                `Report generated by Expense Tracker · All amounts in ${selectedCurrency}`,
+                14,
+                footerY
+            );
             
-            // Save PDF
-            const filename = `expense_report_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(filename);
+            doc.save(`expense_report_${new Date().toISOString().split('T')[0]}.pdf`);
             
             showNotification(`Exported ${expenses.length} expenses to PDF`, 'success');
             
