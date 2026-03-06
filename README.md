@@ -6,6 +6,12 @@ This project allows users to securely manage personal spending data and visualiz
 
 ---
 
+
+## 🌐 Live Demo
+🔗 [https://your-project-id.web.app](https://expense-tracker-app-fb8cc.web.app/)
+
+---
+
 ## 🚀 Project Overview
 
 Managing daily expenses manually using notes or spreadsheets can be inefficient and difficult to track over time.
