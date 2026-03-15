@@ -3,8 +3,9 @@ import {
     getAuth, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
-    signOut,           // ← ADD THIS - for logout
-    onAuthStateChanged // ← ADD THIS - for auth state monitoring
+    signOut,           
+    onAuthStateChanged,
+    sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { 
     getFirestore, 
@@ -48,6 +49,7 @@ export {
     createUserWithEmailAndPassword,
     signOut,              // ← NOW EXPORTED - this fixes your error
     onAuthStateChanged,
+    sendPasswordResetEmail,
     
     // FIRESTORE FUNCTIONS
     collection,
