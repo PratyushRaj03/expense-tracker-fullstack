@@ -15,6 +15,13 @@ const authErrors = {
     'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
     'auth/user-disabled': 'This account has been disabled. Please contact support.',
     'auth/unauthorized-domain': 'This domain is not authorized for Firebase authentication.',
+
+    // Password reset errors
+    'auth/user-not-found': 'No account found with this email address.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/missing-email': 'Please enter your email address.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Please check your connection.',
     
     // Default message
     'default': 'An error occurred. Please try again.'
