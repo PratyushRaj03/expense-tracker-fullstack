@@ -68,16 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let monthlyChartInstance = null;
     
     const chartColors = [
-        '#6366F1', // indigo
-        '#F43F5E', // rose
-        '#10B981', // emerald
-        '#F59E0B', // amber
-        '#3B82F6', // blue
-        '#EC4899', // pink
-        '#14B8A6', // teal
-        '#8B5CF6', // violet
-        '#EF4444', // red
-        '#22C55E', // green
+        '#6366F1', '#F43F5E', '#10B981', '#F59E0B', '#3B82F6',
+        '#EC4899', '#14B8A6', '#8B5CF6', '#EF4444', '#22C55E',
     ];
     
     let currencySymbols = {
@@ -145,8 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateThemeIcons(theme) {
-        // Icon visibility is handled by CSS (body.dark-mode / body.light-mode rules)
-        // Just clear any inline styles that might override CSS
         if (sunIcon) sunIcon.style.display = '';
         if (moonIcon) moonIcon.style.display = '';
         if (themeToggleText) themeToggleText.textContent = theme === 'dark' ? 'Dark' : 'Light';
@@ -586,7 +576,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const textColorBar = isDarkBar ? '#94A3B8' : '#475569';
         const gridColorBar = isDarkBar ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
-        // Build gradient fill
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, '#6366F1');
         gradient.addColorStop(1, '#818CF8');
@@ -691,7 +680,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== DATE FORMATTING FUNCTIONS =====
     
-    // For PDF display (02 Mar 2026)
     function formatDateForDisplay(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -701,8 +689,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }).replace(/,/g, '');
     }
 
-    // For CSV export — prefix with \t forces Excel to treat the cell as plain text,
-    // preventing auto-conversion to a Date serial (which causes ########)
     function formatDateForCSV(dateString) {
         const date = new Date(dateString);
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -749,10 +735,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== CSV EXPORT =====
 
-    // Helper: wrap a value in quotes, escaping any internal quotes
     function csvCell(value) {
         const str = String(value == null ? '' : value);
-        // Always quote so commas/symbols inside values don't break columns
         return `"${str.replace(/"/g, '""')}"`;
     }
 
@@ -769,29 +753,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const rows = [];
 
-            // Header section — every cell quoted so commas in dates/amounts don't split columns
             rows.push([csvCell('EXPENSE REPORT'), ''].join(','));
             rows.push([csvCell('Generated on'), csvCell(formatDateForCSV(new Date().toISOString().split('T')[0]))].join(','));
             rows.push([csvCell('Currency'), csvCell(selectedCurrency)].join(','));
-            // Use plain number (no comma-formatting) so Excel reads it as a number, not two cells
             rows.push([csvCell('Total Expenses'), csvCell(totals.total.toFixed(2))].join(','));
             rows.push([csvCell('Number of Transactions'), csvCell(totals.count)].join(','));
             rows.push('');
 
-            // Column headers
             rows.push(['Date', 'Category', 'Description', 'Amount'].map(csvCell).join(','));
 
-            // Expense rows
             expenses.forEach(exp => {
                 rows.push([
-                    csvCell(formatDateForCSV(exp.date)),   // quoted date prevents #### in Excel
+                    csvCell(formatDateForCSV(exp.date)),
                     csvCell(exp.category),
                     csvCell(exp.description),
-                    csvCell(exp.amount.toFixed(2))         // plain number, no currency symbol
+                    csvCell(exp.amount.toFixed(2))
                 ].join(','));
             });
 
-            // Category breakdown
             rows.push('');
             rows.push([csvCell('CATEGORY BREAKDOWN'), ''].join(','));
             rows.push(['Category', 'Amount'].map(csvCell).join(','));
@@ -799,7 +778,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 rows.push([csvCell(category), csvCell(amount.toFixed(2))].join(','));
             });
 
-            // UTF-8 BOM (\uFEFF) makes Excel open the file correctly without garbled characters
             const csvContent = '\uFEFF' + rows.join('\r\n');
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -841,13 +819,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const totals = calculateReportTotals(expenses);
             const pageWidth = doc.internal.pageSize.getWidth();
             
-            // Title
             doc.setFontSize(24);
             doc.setTextColor(67, 97, 238);
             doc.setFont('helvetica', 'bold');
             doc.text('EXPENSE REPORT', 14, 20);
             
-            // Metadata
             doc.setFontSize(11);
             doc.setTextColor(80, 80, 80);
             doc.setFont('helvetica', 'normal');
@@ -864,7 +840,6 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text(`Total Expenses: ${formatAmountWithCommas(totals.total)} ${selectedCurrency}`, 14, 44);
             doc.text(`Number of Transactions: ${totals.count}`, 14, 51);
             
-            // Filter info
             const categoryFilter = document.getElementById('categoryFilter')?.value;
             const dateFilter = document.getElementById('dateFilter')?.value;
             
@@ -877,7 +852,6 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setTextColor(100, 100, 100);
             doc.text(filterText, 14, 60);
             
-            // Expenses table — plain numbers avoid ₹/currency symbol rendering issues in jsPDF
             const tableData = expenses.map(exp => [
                 formatDateForDisplay(exp.date),
                 exp.category,
@@ -913,7 +887,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 margin: { left: 14, right: 14 }
             });
             
-            // Summary
             const finalY = doc.lastAutoTable.finalY + 15;
             
             doc.setFontSize(14);
@@ -930,7 +903,6 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFont('helvetica', 'normal');
             doc.text(`Total Expenses (${selectedCurrency}): ${formatAmountWithCommas(totals.total)}`, 20, finalY + 15);
             
-            // Category Breakdown
             const categoryY = finalY + 35;
             
             doc.setFontSize(14);
@@ -964,7 +936,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 margin: { left: 14, right: 14 }
             });
             
-            // Footer
             const footerY = doc.internal.pageSize.getHeight() - 15;
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
@@ -990,7 +961,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("✅ User authenticated:", user.uid);
             currentUser = user;
             
-            // Load user profile to get name
             try {
                 const userRef = doc(db, "users", user.uid);
                 const userSnap = await getDoc(userRef);
@@ -1029,8 +999,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dateInput) dateInput.value = today;
             
         } else {
-            console.log("❌ No user authenticated, redirecting...");
-            window.location.href = 'index.html';
+            console.log("❌ No user authenticated - staying on dashboard");
+            // DO NOT redirect - let the dashboard show empty state
+            // This prevents the redirect loop
         }
     });
 
@@ -1207,7 +1178,6 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</tbody></table>';
             expensesContainer.innerHTML = html;
             
-            // Store expenses globally for filters and export
             window.allExpenses = expenses;
             
             updateStats(expenses);
@@ -1509,17 +1479,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // ===== LOGOUT =====
+    // ===== FIXED LOGOUT =====
+    // ===== FIXED LOGOUT =====
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async function() {
             try {
+                console.log("🚪 Logging out...");
+                
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+                logoutBtn.disabled = true;
+                
                 await signOut(auth);
+                
+                console.log("✅ Logout successful");
+                
+                // Clear ALL storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Reset state
                 selectedCurrency = 'USD';
                 currentBudget = 0;
                 currentMonthSpent = 0;
-                window.location.href = 'index.html';
+                
+                // Redirect to login page
+                window.location.replace('./index.html'); // This now goes to the actual login page
+                
             } catch (error) {
                 console.error("Logout error:", error);
+                
+                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+                logoutBtn.disabled = false;
+                
+                showNotification('Failed to logout. Please try again.', 'error');
             }
         });
     }

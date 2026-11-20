@@ -275,11 +275,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===== OTHER EVENT HANDLERS =====
-    // Forgot password link
+    // ===== FORGOT PASSWORD LINK =====
     if (forgotLink) {
         forgotLink.addEventListener('click', function(event) {
             event.preventDefault();
-            showNotification('Password reset feature coming soon!', 'info');
+            window.location.href = 'forgot-password.html';
         });
     }
 
