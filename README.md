@@ -79,8 +79,8 @@ The application empowers users to monitor personal finances, analyze monthly spe
 ```
 expense-tracker-fullstack/
 ├── css/
-│   ├── dashboard.css       # Premium Editorial Fintech dashboard design system
-│   └── style.css           # Auth pages design system tokens & layout
+│   ├── dashboard.css       # Futuristic Quantum Fintech dashboard design system
+│   └── style.css           # Auth pages cyberpunk design system tokens & layout
 ├── js/
 │   ├── app.js              # Login flow, validations & UI notifications
 │   ├── auth-errors.js      # Centralized Firebase authentication error mapper
@@ -96,7 +96,7 @@ expense-tracker-fullstack/
 ├── .gitignore              # Git ignore rules for dependencies and build artifacts
 ├── .vercelignore           # Vercel deployment exclusions
 ├── 404.html                # Custom 404 page for Firebase hosting
-├── dashboard.html          # Main application dashboard (Editorial Wealth Ledger)
+├── dashboard.html          # Main application dashboard (Quantum Wealth Deck)
 ├── firebase.json           # Firebase Hosting rewrites, headers & CSP
 ├── firestore.rules         # Hardened Firestore security rules (strict schema & UID isolation)
 ├── forgot-password.html    # Password reset view

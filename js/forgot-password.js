@@ -75,14 +75,19 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.padding = '16px 24px';
-        notification.style.borderRadius = '8px';
-        notification.style.background = type === 'success' ? '#22c55e' : '#ef4444';
-        notification.style.color = 'white';
+        notification.style.top = '24px';
+        notification.style.right = '24px';
+        notification.style.padding = '14px 22px';
+        notification.style.borderRadius = '10px';
+        notification.style.background = type === 'success' ? 'rgba(10, 28, 22, 0.95)' : 'rgba(32, 10, 18, 0.95)';
+        notification.style.border = type === 'success' ? '1px solid #00FF9D' : '1px solid #FF2A5F';
+        notification.style.color = type === 'success' ? '#00FF9D' : '#FF2A5F';
+        notification.style.fontFamily = "'JetBrains Mono', monospace";
+        notification.style.fontSize = '12.5px';
+        notification.style.fontWeight = '600';
         notification.style.zIndex = '9999';
-        notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        notification.style.boxShadow = type === 'success' ? '0 0 24px rgba(0, 255, 157, 0.35)' : '0 0 24px rgba(255, 42, 95, 0.35)';
+        notification.style.backdropFilter = 'blur(16px)';
         notification.style.display = 'flex';
         notification.style.alignItems = 'center';
         notification.style.gap = '10px';

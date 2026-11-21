@@ -3,33 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker | Wealth Ledger</title>
+    <title>Expense Tracker | Quantum Wealth Deck</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Masthead Header -->
+        <!-- Futuristic Masthead Header -->
         <header class="dashboard-header">
             <div class="brand-section">
                 <div class="brand-mark">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-cube"></i>
                 </div>
                 <div class="welcome-text">
-                    <span class="ledger-tag">Personal Wealth Ledger</span>
-                    <h1>Welcome, <span id="userName">User</span></h1>
-                    <p id="userEmail">Loading account...</p>
+                    <div class="ledger-tag">
+                        <span class="telemetry-beacon"></span>
+                        <span>LIVE TELEMETRY // QUANTUM ENCRYPTED</span>
+                    </div>
+                    <h1>Command Console: <span id="userName">Operator</span></h1>
+                    <p id="userEmail">Synchronizing ledger node...</p>
                 </div>
             </div>
 
             <div class="header-actions">
                 <!-- Currency Selector -->
                 <div class="currency-selector">
-                    <label for="currencySelect">Currency</label>
+                    <label for="currencySelect">Units</label>
                     <select id="currencySelect" class="currency-dropdown" aria-label="Select currency">
                         <option value="USD">🇺🇸 USD ($)</option>
                         <option value="INR">🇮🇳 INR (₹)</option>
@@ -42,10 +45,10 @@
                 </div>
                 
                 <!-- Theme Toggle Button -->
-                <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle dark mode">
+                <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle visual protocol">
                     <i class="fas fa-sun"></i>
                     <i class="fas fa-moon"></i>
-                    <span class="theme-toggle-text">Light</span>
+                    <span class="theme-toggle-text">Dark Deck</span>
                 </button>
 
                 <!-- Export Data Actions -->
@@ -54,26 +57,26 @@
                         <i class="fas fa-file-csv"></i>
                         <span>CSV</span>
                     </button>
-                    <button id="exportPDFBtn" class="export-btn pdf-btn" title="Export Ledger as PDF">
+                    <button id="exportPDFBtn" class="export-btn pdf-btn" title="Export Telemetry Report as PDF">
                         <i class="fas fa-file-pdf"></i>
                         <span>PDF</span>
                     </button>
                 </div>
 
-                <!-- Sign Out -->
-                <button id="logoutBtn" class="logout-btn" title="Sign out securely">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                <!-- Disconnect / Logout -->
+                <button id="logoutBtn" class="logout-btn" title="Disconnect and seal session">
+                    <i class="fas fa-power-off"></i>
+                    <span>Disconnect</span>
                 </button>
             </div>
         </header>
 
-        <!-- Financial Summary Metrics -->
+        <!-- Financial Summary Telemetry Metrics -->
         <section class="stats-grid" aria-label="Financial overview">
             <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-caption">Cumulative Total</span>
-                    <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+                    <span class="stat-caption">SYS.CUMULATIVE_EXPENDITURE</span>
+                    <div class="stat-icon"><i class="fas fa-satellite"></i></div>
                 </div>
                 <div class="stat-info">
                     <h3>Total Expenses</h3>
@@ -83,19 +86,19 @@
 
             <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-caption">Current Period</span>
-                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <span class="stat-caption">SYS.CYCLE_EXPENDITURE</span>
+                    <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
                 </div>
                 <div class="stat-info">
-                    <h3>This Month</h3>
+                    <h3>Current Month</h3>
                     <p id="monthlyTotal" class="stat-numeric">$0.00</p>
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-top">
-                    <span class="stat-caption">Classifications</span>
-                    <div class="stat-icon"><i class="fas fa-folder-open"></i></div>
+                    <span class="stat-caption">SYS.CLASSIFICATIONS_ACTIVE</span>
+                    <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
                 </div>
                 <div class="stat-info">
                     <h3>Active Categories</h3>
@@ -105,15 +108,15 @@
         </section>
 
         <!-- Monthly Budget Allocation Section -->
-        <section class="budget-section" aria-label="Monthly budget">
+        <section class="budget-section" aria-label="Monthly budget allocation">
             <div class="budget-header">
                 <div class="budget-title">
-                    <i class="fas fa-wallet"></i>
-                    <h3>Monthly Budget Target</h3>
+                    <i class="fas fa-microchip"></i>
+                    <h3>Monthly Allocation Ceiling</h3>
                 </div>
                 <div class="budget-actions">
                     <button id="setBudgetBtn" class="budget-set-btn">
-                        <i class="fas fa-pencil-alt"></i> Set Budget
+                        <i class="fas fa-sliders-h"></i> Configure Target
                     </button>
                 </div>
             </div>
@@ -122,15 +125,15 @@
             <div id="budgetDisplay" class="budget-display" style="display: none;">
                 <div class="budget-info">
                     <div class="budget-item">
-                        <span class="budget-label">Allocated</span>
+                        <span class="budget-label">Allocation Ceiling</span>
                         <span class="budget-value" id="budgetAmount">$0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Expended</span>
+                        <span class="budget-label">Utilized Volume</span>
                         <span class="budget-value" id="budgetSpent">$0</span>
                     </div>
                     <div class="budget-item">
-                        <span class="budget-label">Remaining</span>
+                        <span class="budget-label">Remaining Margin</span>
                         <span class="budget-value" id="budgetRemaining">$0</span>
                     </div>
                 </div>
@@ -142,7 +145,7 @@
                 
                 <!-- Warning Message -->
                 <div id="budgetWarning" class="budget-warning" style="display: none;">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-radiation"></i>
                     <span id="warningMessage"></span>
                 </div>
             </div>
@@ -150,7 +153,7 @@
             <!-- Budget Form (shown when editing/setting budget) -->
             <div id="budgetForm" class="budget-form" style="display: none;">
                 <div class="form-group">
-                    <label for="monthlyBudget">Monthly Budget Target</label>
+                    <label for="monthlyBudget">Set Monthly Allocation Ceiling</label>
                     <div class="budget-input-group">
                         <span class="currency-symbol" id="budgetCurrencySymbol">$</span>
                         <input 
@@ -165,22 +168,22 @@
                 </div>
                 <div class="budget-form-actions">
                     <button id="saveBudgetBtn" class="save-budget-btn">
-                        <i class="fas fa-check"></i> Save Target
+                        <i class="fas fa-check"></i> Commit Target
                     </button>
                     <button id="cancelBudgetBtn" class="cancel-budget-btn">
-                        <i class="fas fa-times"></i> Cancel
+                        <i class="fas fa-times"></i> Dismiss
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- Financial Visualizations Grid -->
-        <section class="charts-grid" aria-label="Financial analytics">
+        <!-- Visual Analytics Grid -->
+        <section class="charts-grid" aria-label="Visual analytics">
             <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="fas fa-chart-pie"></i>
-                        <h3>Spending by Category</h3>
+                        <h3>Expenditure Spectrum by Category</h3>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -191,8 +194,8 @@
             <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title">
-                        <i class="fas fa-chart-bar"></i>
-                        <h3>Monthly Spending Trajectory</h3>
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Spending Trajectory Vectors</h3>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -201,18 +204,18 @@
             </div>
         </section>
 
-        <!-- Main Ledger Grid: Add Entry & Transaction Ledger -->
+        <!-- Main Ledger Grid: Transmit Entry & Telemetry Ledger -->
         <div class="dashboard-grid">
             <!-- Add Expense Section -->
-            <section class="add-expense-section" aria-label="Record transaction">
+            <section class="add-expense-section" aria-label="Transmit expense record">
                 <div class="section-header">
-                    <i class="fas fa-plus-circle"></i>
-                    <h2>Record Expense</h2>
+                    <i class="fas fa-bolt"></i>
+                    <h2>Transmit Transaction</h2>
                 </div>
                 
                 <form id="expenseForm" class="expense-form">
                     <div class="form-group">
-                        <label for="amount">Amount</label>
+                        <label for="amount">Transaction Amount</label>
                         <input 
                             type="number" 
                             id="amount" 
@@ -225,33 +228,33 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="category">Category</label>
+                        <label for="category">Classification Sector</label>
                         <select id="category" name="category" required>
-                            <option value="">Select a category</option>
-                            <option value="Food">Food & Dining</option>
-                            <option value="Transport">Transportation</option>
-                            <option value="Shopping">Shopping & Goods</option>
-                            <option value="Bills">Bills & Utilities</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Healthcare">Healthcare</option>
-                            <option value="Education">Education</option>
-                            <option value="Other">Other</option>
+                            <option value="">Select classification sector</option>
+                            <option value="Food">Food & Sustenance</option>
+                            <option value="Transport">Transportation & Transit</option>
+                            <option value="Shopping">Acquisitions & Goods</option>
+                            <option value="Bills">Utilities & Infrastructure</option>
+                            <option value="Entertainment">Entertainment & Media</option>
+                            <option value="Healthcare">Healthcare & Bio</option>
+                            <option value="Education">Education & Research</option>
+                            <option value="Other">Miscellaneous Telemetry</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="description">Description</label>
+                        <label for="description">Transaction Descriptor</label>
                         <input 
                             type="text" 
                             id="description" 
                             name="description" 
-                            placeholder="What was this expense for?"
+                            placeholder="Specify transaction purpose..."
                             required
                         >
                     </div>
                     
                     <div class="form-group">
-                        <label for="date">Transaction Date</label>
+                        <label for="date">Timestamp Date</label>
                         <input 
                             type="date" 
                             id="date" 
@@ -261,37 +264,37 @@
                     </div>
                     
                     <button type="submit" class="submit-btn" id="submitExpenseBtn">
-                        <i class="fas fa-plus"></i> Record Expense
+                        <i class="fas fa-arrow-circle-up"></i> Transmit to Ledger
                     </button>
                 </form>
             </section>
 
             <!-- Expenses Ledger Section -->
-            <section class="expenses-list-section" aria-label="Transaction ledger">
+            <section class="expenses-list-section" aria-label="Autonomous transaction ledger">
                 <div class="ledger-header">
                     <div class="section-header">
-                        <i class="fas fa-receipt"></i>
-                        <h2>Transaction Ledger</h2>
+                        <i class="fas fa-database"></i>
+                        <h2>Autonomous Ledger</h2>
                     </div>
                     
                     <!-- Filter Controls -->
                     <div class="filter-bar">
-                        <select id="categoryFilter" class="filter-select" aria-label="Filter by category">
-                            <option value="all">All Categories</option>
-                            <option value="Food">Food & Dining</option>
-                            <option value="Transport">Transportation</option>
-                            <option value="Shopping">Shopping & Goods</option>
-                            <option value="Bills">Bills & Utilities</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Healthcare">Healthcare</option>
-                            <option value="Education">Education</option>
-                            <option value="Other">Other</option>
+                        <select id="categoryFilter" class="filter-select" aria-label="Filter by sector">
+                            <option value="all">All Sectors</option>
+                            <option value="Food">Food & Sustenance</option>
+                            <option value="Transport">Transportation & Transit</option>
+                            <option value="Shopping">Acquisitions & Goods</option>
+                            <option value="Bills">Utilities & Infrastructure</option>
+                            <option value="Entertainment">Entertainment & Media</option>
+                            <option value="Healthcare">Healthcare & Bio</option>
+                            <option value="Education">Education & Research</option>
+                            <option value="Other">Miscellaneous Telemetry</option>
                         </select>
-                        <select id="dateFilter" class="filter-select" aria-label="Filter by timeframe">
-                            <option value="all">All Records</option>
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
+                        <select id="dateFilter" class="filter-select" aria-label="Filter by timeframe cycle">
+                            <option value="all">All Cycles</option>
+                            <option value="today">Current Cycle (Today)</option>
+                            <option value="week">Weekly Cycle</option>
+                            <option value="month">Monthly Epoch</option>
                         </select>
                     </div>
                 </div>
@@ -299,7 +302,7 @@
                 <!-- Expenses Container -->
                 <div id="expensesContainer" class="expenses-table-container">
                     <div class="loading-spinner">
-                        <i class="fas fa-circle-notch fa-spin"></i> Loading transaction ledger...
+                        <i class="fas fa-circle-notch fa-spin"></i> Polling cryptographic ledger data...
                     </div>
                 </div>
             </section>
@@ -310,46 +313,46 @@
     <div id="editModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Transaction Record</h3>
+                <h3>Modify Transaction Telemetry</h3>
                 <span class="close-modal">&times;</span>
             </div>
             <form id="editExpenseForm" class="expense-form">
                 <input type="hidden" id="editExpenseId">
                 
                 <div class="form-group">
-                    <label for="editAmount">Amount</label>
+                    <label for="editAmount">Transaction Amount</label>
                     <input type="number" id="editAmount" step="0.01" min="0.01" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editCategory">Category</label>
+                    <label for="editCategory">Classification Sector</label>
                     <select id="editCategory" required>
-                        <option value="">Select category</option>
-                        <option value="Food">Food & Dining</option>
-                        <option value="Transport">Transportation</option>
-                        <option value="Shopping">Shopping & Goods</option>
-                        <option value="Bills">Bills & Utilities</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Healthcare">Healthcare</option>
-                        <option value="Education">Education</option>
-                        <option value="Other">Other</option>
+                        <option value="">Select sector</option>
+                        <option value="Food">Food & Sustenance</option>
+                        <option value="Transport">Transportation & Transit</option>
+                        <option value="Shopping">Acquisitions & Goods</option>
+                        <option value="Bills">Utilities & Infrastructure</option>
+                        <option value="Entertainment">Entertainment & Media</option>
+                        <option value="Healthcare">Healthcare & Bio</option>
+                        <option value="Education">Education & Research</option>
+                        <option value="Other">Miscellaneous Telemetry</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editDescription">Description</label>
+                    <label for="editDescription">Descriptor</label>
                     <input type="text" id="editDescription" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editDate">Date</label>
+                    <label for="editDate">Timestamp Date</label>
                     <input type="date" id="editDate" required>
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="cancel-btn" id="cancelEdit">Cancel</button>
+                    <button type="button" class="cancel-btn" id="cancelEdit">Dismiss</button>
                     <button type="submit" class="submit-btn" id="updateExpenseBtn">
-                        <i class="fas fa-save"></i> Save Changes
+                        <i class="fas fa-save"></i> Commit Modification
                     </button>
                 </div>
             </form>

@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let monthlyChartInstance = null;
     
     const chartColors = [
-        '#245B48', '#B96B4B', '#5A7D6F', '#D4A373', '#396052',
-        '#8FA89B', '#C98A6E', '#42584E', '#BFA588', '#2D4B3E'
+        '#00F0FF', '#8B5CF6', '#00FF9D', '#D946EF', '#FFB800',
+        '#3B82F6', '#FF2A5F', '#10F0A0', '#A855F7', '#06B6D4'
     ];
     
     let currencySymbols = {
@@ -128,18 +128,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.remove('dark-mode');
             updateThemeIcons('light');
         } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                document.body.classList.add('dark-mode');
-                document.body.classList.remove('light-mode');
-                updateThemeIcons('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.add('light-mode');
-                document.body.classList.remove('dark-mode');
-                updateThemeIcons('light');
-                localStorage.setItem('theme', 'light');
-            }
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+            updateThemeIcons('dark');
+            localStorage.setItem('theme', 'dark');
         }
     }
     
@@ -492,9 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const emptyDiv = container.querySelector('.empty-chart');
         if (emptyDiv) emptyDiv.remove();
         
-        const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#A6B4AC' : '#57635C';
-        const bgColor = isDark ? '#1F2421' : '#FFFFFF';
+        const isDark = !document.body.classList.contains('light-mode');
+        const textColor = isDark ? '#94A3B8' : '#475569';
+        const bgColor = isDark ? '#0D111A' : '#FFFFFF';
 
         categoryChartInstance = new Chart(ctx, {
             type: 'doughnut',
@@ -504,20 +496,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: categoryData.data,
                     backgroundColor: chartColors.slice(0, categoryData.labels.length),
                     borderColor: bgColor,
-                    borderWidth: 3,
-                    hoverOffset: 8
+                    borderWidth: 2,
+                    hoverOffset: 10
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '64%',
+                cutout: '68%',
                 plugins: {
                     legend: {
                         position: 'right',
                         labels: {
                             color: textColor,
-                            font: { size: 12, family: "'DM Sans', sans-serif", weight: '500' },
+                            font: { size: 12, family: "'Plus Jakarta Sans', sans-serif", weight: '600' },
                             padding: 16,
                             usePointStyle: true,
                             pointStyle: 'circle',
@@ -526,15 +518,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     tooltip: {
-                        backgroundColor: isDark ? '#262D29' : '#FFFFFF',
-                        titleColor: isDark ? '#F5F3ED' : '#242A27',
-                        bodyColor: isDark ? '#A6B4AC' : '#57635C',
-                        borderColor: isDark ? '#414D46' : '#E5E1D8',
+                        backgroundColor: isDark ? 'rgba(13, 17, 26, 0.95)' : '#FFFFFF',
+                        titleColor: isDark ? '#FFFFFF' : '#0B132B',
+                        bodyColor: isDark ? '#00F0FF' : '#0284C7',
+                        borderColor: isDark ? 'rgba(0, 240, 255, 0.3)' : 'rgba(2, 132, 199, 0.3)',
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
-                        titleFont: { family: "'DM Sans', sans-serif", weight: '600' },
-                        bodyFont: { family: "'IBM Plex Mono', monospace" },
+                        titleFont: { family: "'Space Grotesk', sans-serif", weight: '700' },
+                        bodyFont: { family: "'JetBrains Mono', monospace", weight: '600' },
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
@@ -581,21 +573,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const emptyDiv = container.querySelector('.empty-chart');
         if (emptyDiv) emptyDiv.remove();
         
-        const isDarkBar = document.body.classList.contains('dark-mode');
-        const textColorBar = isDarkBar ? '#A6B4AC' : '#57635C';
-        const gridColorBar = isDarkBar ? 'rgba(245, 243, 237, 0.06)' : 'rgba(36, 42, 39, 0.06)';
-        const barFill = isDarkBar ? '#377760' : '#245B48';
-        const barHover = isDarkBar ? '#489378' : '#1A4335';
+        const isDarkBar = !document.body.classList.contains('light-mode');
+        const textColorBar = isDarkBar ? '#94A3B8' : '#475569';
+        const gridColorBar = isDarkBar ? 'rgba(0, 240, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        if (isDarkBar) {
+            gradient.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
+            gradient.addColorStop(1, 'rgba(0, 114, 255, 0.25)');
+        } else {
+            gradient.addColorStop(0, '#0284C7');
+            gradient.addColorStop(1, '#0052CC');
+        }
 
         monthlyChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: monthlyData.labels,
                 datasets: [{
-                    label: 'Spending',
+                    label: 'Telemetry Expenditure',
                     data: monthlyData.data,
-                    backgroundColor: barFill,
-                    hoverBackgroundColor: barHover,
+                    backgroundColor: gradient,
+                    hoverBackgroundColor: isDarkBar ? '#00F0FF' : '#0369A1',
                     borderRadius: 6,
                     borderSkipped: false,
                 }]
@@ -606,15 +605,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: isDarkBar ? '#262D29' : '#FFFFFF',
-                        titleColor: isDarkBar ? '#F5F3ED' : '#242A27',
-                        bodyColor: isDarkBar ? '#A6B4AC' : '#57635C',
-                        borderColor: isDarkBar ? '#414D46' : '#E5E1D8',
+                        backgroundColor: isDarkBar ? 'rgba(13, 17, 26, 0.95)' : '#FFFFFF',
+                        titleColor: isDarkBar ? '#FFFFFF' : '#0B132B',
+                        bodyColor: isDarkBar ? '#00FF9D' : '#059669',
+                        borderColor: isDarkBar ? 'rgba(0, 240, 255, 0.3)' : 'rgba(2, 132, 199, 0.3)',
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
-                        titleFont: { family: "'DM Sans', sans-serif", weight: '600' },
-                        bodyFont: { family: "'IBM Plex Mono', monospace" },
+                        titleFont: { family: "'Space Grotesk', sans-serif", weight: '700' },
+                        bodyFont: { family: "'JetBrains Mono', monospace", weight: '600' },
                         callbacks: {
                             label: function(context) {
                                 return `  Total: ${formatAmount(context.raw)}`;
@@ -625,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: textColorBar, font: { size: 11, family: "'DM Sans', sans-serif" } },
+                        ticks: { color: textColorBar, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } },
                         border: { display: false }
                     },
                     y: {
@@ -634,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         border: { display: false, dash: [4, 4] },
                         ticks: {
                             color: textColorBar,
-                            font: { size: 11, family: "'IBM Plex Mono', monospace" },
+                            font: { size: 11, family: "'JetBrains Mono', monospace" },
                             callback: function(value) {
                                 return formatAmount(value);
                             }
@@ -1516,13 +1515,16 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.style.right = '24px';
         notification.style.padding = '14px 22px';
         notification.style.borderRadius = '10px';
-        notification.style.background = type === 'success' ? '#245B48' : '#B33927';
-        notification.style.color = '#F5F3ED';
-        notification.style.fontFamily = "'DM Sans', sans-serif";
-        notification.style.fontSize = '13.5px';
-        notification.style.fontWeight = '500';
+        notification.style.background = type === 'success' ? 'rgba(10, 28, 22, 0.95)' : 'rgba(32, 10, 18, 0.95)';
+        notification.style.border = type === 'success' ? '1px solid #00FF9D' : '1px solid #FF2A5F';
+        notification.style.color = type === 'success' ? '#00FF9D' : '#FF2A5F';
+        notification.style.fontFamily = "'JetBrains Mono', monospace";
+        notification.style.fontSize = '12.5px';
+        notification.style.fontWeight = '600';
+        notification.style.letterSpacing = '0.04em';
         notification.style.zIndex = '9999';
-        notification.style.boxShadow = '0 6px 20px rgba(36, 42, 39, 0.18)';
+        notification.style.boxShadow = type === 'success' ? '0 0 24px rgba(0, 255, 157, 0.35)' : '0 0 24px rgba(255, 42, 95, 0.35)';
+        notification.style.backdropFilter = 'blur(16px)';
         notification.style.display = 'flex';
         notification.style.alignItems = 'center';
         notification.style.gap = '10px';

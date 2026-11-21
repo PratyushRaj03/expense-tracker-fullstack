@@ -122,14 +122,18 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.padding = '16px 24px';
-        notification.style.borderRadius = '8px';
-        notification.style.background = type === 'success' ? '#22c55e' : type === 'info' ? '#3b82f6' : '#ef4444';
-        notification.style.color = 'white';
-        notification.style.fontWeight = '500';
-        notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        notification.style.top = '24px';
+        notification.style.right = '24px';
+        notification.style.padding = '14px 22px';
+        notification.style.borderRadius = '10px';
+        notification.style.background = type === 'success' ? 'rgba(10, 28, 22, 0.95)' : type === 'info' ? 'rgba(10, 20, 35, 0.95)' : 'rgba(32, 10, 18, 0.95)';
+        notification.style.border = type === 'success' ? '1px solid #00FF9D' : type === 'info' ? '1px solid #00F0FF' : '1px solid #FF2A5F';
+        notification.style.color = type === 'success' ? '#00FF9D' : type === 'info' ? '#00F0FF' : '#FF2A5F';
+        notification.style.fontFamily = "'JetBrains Mono', monospace";
+        notification.style.fontSize = '12.5px';
+        notification.style.fontWeight = '600';
+        notification.style.boxShadow = type === 'success' ? '0 0 24px rgba(0, 255, 157, 0.35)' : '0 0 24px rgba(255, 42, 95, 0.35)';
+        notification.style.backdropFilter = 'blur(16px)';
         notification.style.zIndex = '9999';
         notification.style.display = 'flex';
         notification.style.alignItems = 'center';
@@ -152,11 +156,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const icon = inputGroup.querySelector('.input-icon i');
         
         if (this.value && !validateEmail(this.value)) {
-            this.style.borderColor = '#ef4444';
-            icon.style.color = '#ef4444';
+            this.style.borderColor = '#FF2A5F';
+            icon.style.color = '#FF2A5F';
         } else if (this.value && validateEmail(this.value)) {
-            this.style.borderColor = '#22c55e';
-            icon.style.color = '#22c55e';
+            this.style.borderColor = '#00FF9D';
+            icon.style.color = '#00FF9D';
         } else {
             this.style.borderColor = '';
             icon.style.color = '';

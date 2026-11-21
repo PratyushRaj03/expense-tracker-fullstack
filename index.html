@@ -3,46 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker | Login</title>
+    <title>Expense Tracker | Quantum Vault Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Main container -->
     <div class="container">
-        <!-- Login card -->
         <div class="login-card">
-            <!-- Logo section -->
             <div class="logo-wrapper">
                 <div class="logo">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-cube"></i>
                 </div>
-                <h2>ExpenseTracker</h2>
+                <h2>QUANTUM // LEDGER</h2>
             </div>
 
-            <!-- Header section -->
             <div class="header">
-                <h1>Welcome back</h1>
-                <p>Enter your credentials to access your personal wealth ledger</p>
+                <div class="telemetry-tag">
+                    <span class="telemetry-beacon"></span>
+                    <span>SECURE QUANTUM PROTOCOL</span>
+                </div>
+                <h1>System Access</h1>
+                <p>Authenticate credentials to decrypt your autonomous wealth ledger</p>
             </div>
 
-            <!-- Login form -->
             <form id="loginForm" class="login-form">
-                <!-- Email field with error container -->
                 <div class="input-group">
                     <div class="input-icon">
-                        <i class="fas fa-envelope"></i>
+                        <i class="fas fa-terminal"></i>
                     </div>
                     <div class="input-field">
-                        <label for="email">Email Address</label>
+                        <label for="email">Operator Email Identifier</label>
                         <input 
                             type="email" 
                             id="email" 
                             name="email" 
-                            placeholder="Enter your email"
+                            placeholder="operator@quantum.vault"
                             required
                         >
                         <div class="input-highlight"></div>
@@ -50,19 +48,18 @@
                     </div>
                 </div>
 
-                <!-- Password field with error container -->
                 <div class="input-group">
                     <div class="input-icon">
-                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-shield-alt"></i>
                     </div>
                     <div class="input-field">
-                        <label for="password">Password</label>
+                        <label for="password">Passcode Authorization</label>
                         <div class="password-wrapper">
                             <input 
                                 type="password" 
                                 id="password" 
                                 name="password" 
-                                placeholder="Enter your password"
+                                placeholder="••••••••••••"
                                 required
                             >
                             <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
@@ -74,34 +71,31 @@
                     </div>
                 </div>
 
-                <!-- Remember me and forgot password -->
                 <div class="form-options">
                     <label class="remember-checkbox">
                         <input type="checkbox" id="remember">
                         <span class="checkbox-custom"></span>
-                        <span class="checkbox-label">Remember me</span>
+                        <span class="checkbox-label">Retain cached session</span>
                     </label>
-                    <a href="forgot-password.html" class="forgot-link" id="forgotPassword">Forgot password?</a>
+                    <a href="forgot-password.html" class="forgot-link" id="forgotPassword">Recover key?</a>
                 </div>
 
-                <!-- Login button -->
                 <button type="submit" class="login-btn" id="loginBtn">
-                    <span class="btn-text">Sign In</span>
+                    <span class="btn-text">INITIALIZE DECRYPT</span>
                     <span class="btn-loader" style="display: none;">
                         <i class="fas fa-circle-notch fa-spin"></i>
                     </span>
                 </button>
 
-                <!-- Sign up link -->
                 <p class="signup-text">
-                    Don't have an account? 
-                    <a href="signup.html" id="signupLink">Create an account</a>
+                    New operator? 
+                    <a href="signup.html" id="signupLink">Deploy new ledger node</a>
                 </p>
             </form>
         </div>
     </div>
 
-    <!-- ===== SCRIPTS ===== -->
+    <!-- Scripts -->
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/auth-errors.js"></script>
     <script type="module" src="js/app.js"></script>
