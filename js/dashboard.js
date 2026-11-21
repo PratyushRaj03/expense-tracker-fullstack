@@ -89,6 +89,62 @@ document.addEventListener('DOMContentLoaded', function() {
         'AUD': 'A$'
     };
 
+    // Realistic Baseline Exchange Rates (1 USD = X Currency)
+    // Synchronized to market benchmarks: 100 USD = 9,000 INR
+    const DEFAULT_RATES = {
+        'USD': 1.0,
+        'INR': 90.0,
+        'EUR': 0.95,
+        'GBP': 0.79,
+        'JPY': 155.0,
+        'CAD': 1.44,
+        'AUD': 1.58
+    };
+
+    let exchangeRates = { ...DEFAULT_RATES };
+
+    function getExchangeRate(currency = selectedCurrency) {
+        return exchangeRates[currency] || DEFAULT_RATES[currency] || 1.0;
+    }
+
+    function convertFromUSD(amountInUSD, targetCurrency = selectedCurrency) {
+        const rate = getExchangeRate(targetCurrency);
+        return (parseFloat(amountInUSD) || 0) * rate;
+    }
+
+    function convertToUSD(amountInCurrency, sourceCurrency = selectedCurrency) {
+        const rate = getExchangeRate(sourceCurrency);
+        if (!rate || rate <= 0) return parseFloat(amountInCurrency) || 0;
+        return (parseFloat(amountInCurrency) || 0) / rate;
+    }
+
+    async function fetchLiveExchangeRates() {
+        try {
+            const res = await fetch('https://open.er-api.com/v6/latest/USD');
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.rates) {
+                    Object.keys(DEFAULT_RATES).forEach(curr => {
+                        if (data.rates[curr] && typeof data.rates[curr] === 'number') {
+                            exchangeRates[curr] = data.rates[curr];
+                        }
+                    });
+                    console.log('🌐 Exchange rates synchronized with live market:', exchangeRates);
+                    if (currentUser) {
+                        updateBudgetDisplay();
+                        updateStats(window.allExpenses || []);
+                        updateCharts(window.allExpenses || []);
+                        await loadExpenses(currentUser.uid);
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('Using baseline exchange rates:', exchangeRates);
+        }
+    }
+
+    fetchLiveExchangeRates();
+
     // ===== ADD EMPTY CHART STYLES =====
     const chartEmptyStyles = `
         .empty-chart {
@@ -208,9 +264,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function formatAmount(amount, currency = selectedCurrency) {
+    function formatAmount(amountInUSD, currency = selectedCurrency) {
+        const converted = convertFromUSD(amountInUSD, currency);
         const symbol = currencySymbols[currency] || '$';
-        const formattedNumber = formatAmountWithCommas(amount);
+        const formattedNumber = formatAmountWithCommas(converted, currency);
+        
+        if (currency === 'INR') {
+            return `${symbol} ${formattedNumber}`;
+        }
+        return `${symbol}${formattedNumber}`;
+    }
+
+    function formatAmountRaw(amountInCurrency, currency = selectedCurrency) {
+        const symbol = currencySymbols[currency] || '$';
+        const formattedNumber = formatAmountWithCommas(amountInCurrency, currency);
         
         if (currency === 'INR') {
             return `${symbol} ${formattedNumber}`;
@@ -377,9 +444,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (budgetForm) budgetForm.style.display = 'block';
             if (setBudgetBtn) setBudgetBtn.style.display = 'none';
             
+            if (currencySymbolEl) {
+                currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
+            }
+            
             const budgetInput = document.getElementById('monthlyBudget');
             if (budgetInput && currentBudget > 0) {
-                budgetInput.value = currentBudget;
+                const converted = convertFromUSD(currentBudget, selectedCurrency);
+                budgetInput.value = selectedCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
             }
         } else {
             if (budgetForm) budgetForm.style.display = 'none';
@@ -397,12 +469,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         expenses.forEach(expense => {
             const category = expense.category;
-            const amount = expense.amount;
+            const amountInSelected = convertFromUSD(expense.amount, selectedCurrency);
             
             if (categoryMap.has(category)) {
-                categoryMap.set(category, categoryMap.get(category) + amount);
+                categoryMap.set(category, categoryMap.get(category) + amountInSelected);
             } else {
-                categoryMap.set(category, amount);
+                categoryMap.set(category, amountInSelected);
             }
         });
         
@@ -438,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (monthMap.has(monthKey)) {
                 const monthData = monthMap.get(monthKey);
-                monthData.total += expense.amount;
+                monthData.total += convertFromUSD(expense.amount, selectedCurrency);
                 monthMap.set(monthKey, monthData);
             }
         });
@@ -708,11 +780,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== AMOUNT FORMATTING FUNCTIONS =====
     
-    function formatAmountWithCommas(amount) {
+    function formatAmountWithCommas(amount, currency = selectedCurrency) {
         const num = parseFloat(amount);
-        if (isNaN(num)) return '0.00';
+        if (isNaN(num)) return currency === 'JPY' ? '0' : '0.00';
         
-        const parts = num.toFixed(2).split('.');
+        const decimals = currency === 'JPY' ? 0 : 2;
+        const parts = num.toFixed(decimals).split('.');
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         return parts.join('.');
     }
@@ -722,19 +795,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateReportTotals(expenses) {
-        const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalUSD = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+        const totalInSelected = convertFromUSD(totalUSD, selectedCurrency);
         
         const categoryTotals = {};
+        const categoryTotalsInSelected = {};
         expenses.forEach(exp => {
-            categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+            const amtUSD = parseFloat(exp.amount) || 0;
+            categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + amtUSD;
+            categoryTotalsInSelected[exp.category] = (categoryTotalsInSelected[exp.category] || 0) + convertFromUSD(amtUSD, selectedCurrency);
         });
         
         return {
-            total: total,
-            totalFormatted: formatAmount(total),
-            totalWithCommas: formatAmountWithCommas(total),
+            total: totalUSD,
+            totalInSelected: totalInSelected,
+            totalFormatted: formatAmount(totalUSD),
+            totalWithCommas: formatAmountWithCommas(totalInSelected, selectedCurrency),
             count: expenses.length,
             categoryTotals: categoryTotals,
+            categoryTotalsInSelected: categoryTotalsInSelected,
             categoryTotalsFormatted: Object.fromEntries(
                 Object.entries(categoryTotals).map(([cat, amt]) => [cat, formatAmount(amt)])
             )
@@ -763,25 +842,27 @@ document.addEventListener('DOMContentLoaded', function() {
             rows.push([csvCell('EXPENSE REPORT'), ''].join(','));
             rows.push([csvCell('Generated on'), csvCell(formatDateForCSV(new Date().toISOString().split('T')[0]))].join(','));
             rows.push([csvCell('Currency'), csvCell(selectedCurrency)].join(','));
-            rows.push([csvCell('Total Expenses'), csvCell(totals.total.toFixed(2))].join(','));
+            rows.push([csvCell('Exchange Rate (1 USD)'), csvCell(getExchangeRate(selectedCurrency).toString())].join(','));
+            rows.push([csvCell(`Total Expenses (${selectedCurrency})`), csvCell(totals.totalInSelected.toFixed(2))].join(','));
             rows.push([csvCell('Number of Transactions'), csvCell(totals.count)].join(','));
             rows.push('');
 
-            rows.push(['Date', 'Category', 'Description', 'Amount'].map(csvCell).join(','));
+            rows.push(['Date', 'Category', 'Description', `Amount (${selectedCurrency})`].map(csvCell).join(','));
 
             expenses.forEach(exp => {
+                const converted = convertFromUSD(exp.amount, selectedCurrency);
                 rows.push([
                     csvCell(formatDateForCSV(exp.date)),
                     csvCell(exp.category),
                     csvCell(exp.description),
-                    csvCell(exp.amount.toFixed(2))
+                    csvCell(converted.toFixed(2))
                 ].join(','));
             });
 
             rows.push('');
             rows.push([csvCell('CATEGORY BREAKDOWN'), ''].join(','));
-            rows.push(['Category', 'Amount'].map(csvCell).join(','));
-            Object.entries(totals.categoryTotals).forEach(([category, amount]) => {
+            rows.push(['Category', `Amount (${selectedCurrency})`].map(csvCell).join(','));
+            Object.entries(totals.categoryTotalsInSelected).forEach(([category, amount]) => {
                 rows.push([csvCell(category), csvCell(amount.toFixed(2))].join(','));
             });
 
@@ -791,13 +872,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `expenses_${selectedCurrency}_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
             
-            showNotification(`Exported ${expenses.length} expenses to CSV`, 'success');
+            showNotification(`Exported ${expenses.length} expenses to CSV (${selectedCurrency})`, 'success');
             
         } catch (error) {
             console.error('CSV Export Error:', error);
@@ -827,7 +908,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pageWidth = doc.internal.pageSize.getWidth();
             
             doc.setFontSize(24);
-            doc.setTextColor(67, 97, 238);
+            doc.setTextColor(0, 240, 255);
             doc.setFont('helvetica', 'bold');
             doc.text('EXPENSE REPORT', 14, 20);
             
@@ -843,8 +924,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             doc.text(`Generated on: ${formattedDate}`, 14, 30);
-            doc.text(`Currency: ${selectedCurrency}`, 14, 37);
-            doc.text(`Total Expenses: ${formatAmountWithCommas(totals.total)} ${selectedCurrency}`, 14, 44);
+            doc.text(`Currency: ${selectedCurrency} (Exchange Rate: ${getExchangeRate(selectedCurrency)} per USD)`, 14, 37);
+            doc.text(`Total Expenses: ${formatAmountWithCommas(totals.totalInSelected, selectedCurrency)} ${selectedCurrency}`, 14, 44);
             doc.text(`Number of Transactions: ${totals.count}`, 14, 51);
             
             const categoryFilter = document.getElementById('categoryFilter')?.value;
@@ -863,7 +944,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formatDateForDisplay(exp.date),
                 exp.category,
                 exp.description,
-                formatAmountWithCommas(exp.amount)
+                formatAmountWithCommas(convertFromUSD(exp.amount, selectedCurrency), selectedCurrency)
             ]);
             
             doc.autoTable({
@@ -872,8 +953,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: tableData,
                 theme: 'grid',
                 headStyles: {
-                    fillColor: [67, 97, 238],
-                    textColor: [255, 255, 255],
+                    fillColor: [13, 17, 26],
+                    textColor: [0, 240, 255],
                     fontSize: 10,
                     fontStyle: 'bold',
                     halign: 'center'
@@ -897,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const finalY = doc.lastAutoTable.finalY + 15;
             
             doc.setFontSize(14);
-            doc.setTextColor(67, 97, 238);
+            doc.setTextColor(0, 240, 255);
             doc.setFont('helvetica', 'bold');
             doc.text('Summary', 14, finalY);
             
@@ -908,18 +989,18 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFontSize(10);
             doc.setTextColor(50, 50, 50);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Total Expenses (${selectedCurrency}): ${formatAmountWithCommas(totals.total)}`, 20, finalY + 15);
+            doc.text(`Total Expenses (${selectedCurrency}): ${formatAmountWithCommas(totals.totalInSelected, selectedCurrency)}`, 20, finalY + 15);
             
             const categoryY = finalY + 35;
             
             doc.setFontSize(14);
-            doc.setTextColor(67, 97, 238);
+            doc.setTextColor(0, 240, 255);
             doc.setFont('helvetica', 'bold');
             doc.text('Category Breakdown', 14, categoryY);
             
-            const categoryData = Object.entries(totals.categoryTotals).map(([cat, amt]) => [
+            const categoryData = Object.entries(totals.categoryTotalsInSelected).map(([cat, amt]) => [
                 cat,
-                formatAmountWithCommas(amt)
+                formatAmountWithCommas(amt, selectedCurrency)
             ]);
             
             doc.autoTable({
@@ -1009,6 +1090,11 @@ document.addEventListener('DOMContentLoaded', function() {
             await loadUserBudget(user.uid);
             await calculateMonthlySpending();
             await loadExpenses(user.uid);
+
+            const amountLabel = document.querySelector('label[for="amount"]');
+            if (amountLabel) {
+                amountLabel.textContent = `Transaction Amount (${currencySymbols[selectedCurrency] || '$'})`;
+            }
             
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('date');
@@ -1038,12 +1124,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currencySymbolEl) {
                     currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
                 }
+
+                const amountLabel = document.querySelector('label[for="amount"]');
+                if (amountLabel) {
+                    amountLabel.textContent = `Transaction Amount (${currencySymbols[selectedCurrency] || '$'})`;
+                }
                 
-                await loadExpenses(currentUser.uid);
+                updateStats(window.allExpenses || []);
+                updateCharts(window.allExpenses || []);
                 updateBudgetDisplay();
+                await loadExpenses(currentUser.uid);
                 
+                const rateVal = getExchangeRate(selectedCurrency);
                 const currencyName = currencySelect.options[currencySelect.selectedIndex].text;
-                showNotification(`Currency changed to ${currencyName}`, 'success');
+                showNotification(`Currency switched to ${currencyName} (1 USD ≈ ${formatAmountWithCommas(rateVal, selectedCurrency)} ${selectedCurrency})`, 'success');
             } else {
                 showNotification('Failed to save currency preference', 'error');
                 currencySelect.value = selectedCurrency;
@@ -1074,13 +1168,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const rawAmount = document.getElementById('amount').value;
-            const amount = parseFloat(rawAmount);
+            const enteredAmount = parseFloat(rawAmount);
             const category = document.getElementById('category').value;
             const description = sanitizeString(document.getElementById('description').value, 500);
             const date = document.getElementById('date').value;
             
-            if (isNaN(amount) || amount <= 0 || amount > 10000000) {
-                showNotification('Please enter a valid amount between 0.01 and 10,000,000', 'error');
+            if (isNaN(enteredAmount) || enteredAmount <= 0) {
+                showNotification('Please enter a valid positive amount', 'error');
+                return;
+            }
+
+            // Convert entered amount in selected currency to base USD for storage
+            const baseAmountUSD = convertToUSD(enteredAmount, selectedCurrency);
+            
+            if (baseAmountUSD > 10000000) {
+                showNotification('Amount exceeds maximum transaction threshold', 'error');
                 return;
             }
             
@@ -1106,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 const expenseData = {
-                    amount: amount,
+                    amount: parseFloat(baseAmountUSD.toFixed(2)),
                     category: category,
                     description: description,
                     date: date,
@@ -1122,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('date').value = today;
                 
-                showNotification(`Expense added successfully! (${formatAmount(amount)})`, 'success');
+                showNotification(`Expense added successfully! (${formatAmount(baseAmountUSD)})`, 'success');
                 await loadExpenses(currentUser.uid);
                 
             } catch (error) {
@@ -1290,17 +1392,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const expense = expenseSnap.data();
             
             document.getElementById('editExpenseId').value = expenseId;
-            document.getElementById('editAmount').value = expense.amount;
+            const convertedAmount = convertFromUSD(expense.amount, selectedCurrency);
+            document.getElementById('editAmount').value = selectedCurrency === 'JPY' ? Math.round(convertedAmount) : parseFloat(convertedAmount.toFixed(2));
             document.getElementById('editCategory').value = expense.category;
             document.getElementById('editDescription').value = expense.description;
             document.getElementById('editDate').value = expense.date;
             
             const amountLabel = document.querySelector('label[for="editAmount"]');
             if (amountLabel) {
-                amountLabel.textContent = `Amount (${currencySymbols[selectedCurrency] || '$'})`;
+                amountLabel.textContent = `Transaction Amount (${currencySymbols[selectedCurrency] || '$'})`;
             }
             
-            editModal.style.display = 'block';
+            editModal.style.display = 'flex';
             
         } catch (error) {
             console.error("❌ Error loading expense for edit:", error);
@@ -1395,17 +1498,22 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
             
             const expenseId = document.getElementById('editExpenseId').value;
+            const enteredAmount = parseFloat(document.getElementById('editAmount').value);
+            
+            if (isNaN(enteredAmount) || enteredAmount <= 0) {
+                showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+
+            // Convert entered amount in selected currency to base USD for storage
+            const baseAmountUSD = convertToUSD(enteredAmount, selectedCurrency);
+            
             const updatedData = {
-                amount: parseFloat(document.getElementById('editAmount').value),
+                amount: parseFloat(baseAmountUSD.toFixed(2)),
                 category: document.getElementById('editCategory').value,
                 description: document.getElementById('editDescription').value.trim(),
                 date: document.getElementById('editDate').value
             };
-            
-            if (!updatedData.amount || updatedData.amount <= 0) {
-                showNotification('Please enter a valid amount', 'error');
-                return;
-            }
             
             if (!updatedData.category) {
                 showNotification('Please select a category', 'error');
@@ -1436,14 +1544,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveBudgetBtn) {
         saveBudgetBtn.addEventListener('click', async () => {
             const budgetInput = document.getElementById('monthlyBudget');
-            const budget = parseFloat(budgetInput.value);
+            const enteredBudget = parseFloat(budgetInput.value);
             
-            if (isNaN(budget) || budget < 0) {
+            if (isNaN(enteredBudget) || enteredBudget < 0) {
                 showNotification('Please enter a valid budget amount', 'error');
                 return;
             }
             
-            await saveUserBudget(budget);
+            // Convert entered budget in selected currency back to base USD for storage
+            const baseBudgetUSD = convertToUSD(enteredBudget, selectedCurrency);
+            await saveUserBudget(baseBudgetUSD);
         });
     }
 
