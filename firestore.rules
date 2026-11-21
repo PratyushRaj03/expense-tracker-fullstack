@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== HELPER FUNCTIONS =====
+
+    // Check if the request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    // Check if the authenticated user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate supported currencies
+    function isValidCurrency(curr) {
+      return curr in ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+    }
+
+    // Validate allowed expense categories
+    function isValidCategory(cat) {
+      return cat is string &&
+             cat.size() >= 2 &&
+             cat.size() <= 50 &&
+             cat in ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Healthcare', 'Education', 'Other'];
+    }
+
+    // Validate date format YYYY-MM-DD
+    function isValidDate(dateStr) {
+      return dateStr is string && dateStr.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    // Validate positive monetary amount within realistic financial bounds
+    function isValidAmount(amount) {
+      return amount is number && amount > 0 && amount <= 10000000;
+    }
+
+    // Validate ISO timestamp or string timestamp
+    function isValidTimestampString(ts) {
+      return ts is string && ts.size() >= 10 && ts.size() <= 35;
+    }
+
+    // ===== USER PROFILE ISOLATION & VALIDATION =====
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow get: if isOwner(userId);
+
+      // Deny user listing / enumeration entirely
+      allow list: if false;
+
+      // Users can create their own profile upon registration
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['name', 'email', 'createdAt'])
+                    && request.resource.data.keys().hasOnly(['name', 'email', 'createdAt', 'totalExpenses', 'monthlyBudget', 'preferredCurrency', 'updatedAt'])
+                    && request.resource.data.name is string 
+                    && request.resource.data.name.size() >= 2 
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.email is string 
+                    && request.resource.data.email.size() <= 200
+                    && (!('preferredCurrency' in request.resource.data) || isValidCurrency(request.resource.data.preferredCurrency))
+                    && (!('monthlyBudget' in request.resource.data) || (request.resource.data.monthlyBudget is number && request.resource.data.monthlyBudget >= 0 && request.resource.data.monthlyBudget <= 100000000))
+                    && (!('totalExpenses' in request.resource.data) || (request.resource.data.totalExpenses is number && request.resource.data.totalExpenses >= 0 && request.resource.data.totalExpenses <= 1000000000))
+                    && isValidTimestampString(request.resource.data.createdAt);
+
+      // Users can update their own profile with immutable core identifiers
+      allow update: if isOwner(userId)
+                    // Core identity must be immutable
+                    && request.resource.data.email == resource.data.email
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 100))
+                    && (!('preferredCurrency' in request.resource.data) || isValidCurrency(request.resource.data.preferredCurrency))
+                    && (!('monthlyBudget' in request.resource.data) || (request.resource.data.monthlyBudget is number && request.resource.data.monthlyBudget >= 0 && request.resource.data.monthlyBudget <= 100000000))
+                    && (!('totalExpenses' in request.resource.data) || (request.resource.data.totalExpenses is number && request.resource.data.totalExpenses >= 0));
+
+      // Deny direct user document deletion via client SDK
+      allow delete: if false;
+
+      // ===== FINANCIAL TRANSACTIONS (EXPENSES) ISOLATION & VALIDATION =====
+      match /expenses/{expenseId} {
+        // Strict read access: only the owner can read their expenses
+        allow read: if isOwner(userId);
+
+        // Strict create access: only owner can add an expense with strict field validation
+        allow create: if isOwner(userId)
+                      && request.resource.data.keys().hasAll(['amount', 'category', 'description', 'date', 'userId'])
+                      && request.resource.data.keys().hasOnly(['amount', 'category', 'description', 'date', 'userId', 'createdAt', 'updatedAt'])
+                      && request.resource.data.userId == userId
+                      && isValidAmount(request.resource.data.amount)
+                      && isValidCategory(request.resource.data.category)
+                      && request.resource.data.description is string
+                      && request.resource.data.description.size() >= 1
+                      && request.resource.data.description.size() <= 500
+                      && isValidDate(request.resource.data.date)
+                      && (!('createdAt' in request.resource.data) || isValidTimestampString(request.resource.data.createdAt));
+
+        // Strict update access: only owner can modify, core metadata is immutable
+        allow update: if isOwner(userId)
+                      && request.resource.data.userId == resource.data.userId
+                      && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+                      && isValidAmount(request.resource.data.amount)
+                      && isValidCategory(request.resource.data.category)
+                      && request.resource.data.description is string
+                      && request.resource.data.description.size() >= 1
+                      && request.resource.data.description.size() <= 500
+                      && isValidDate(request.resource.data.date)
+                      && (!('updatedAt' in request.resource.data) || isValidTimestampString(request.resource.data.updatedAt));
+
+        // Strict delete access: only owner can delete their expense
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // ===== DEFAULT DENY ALL OTHER COLLECTIONS & ACCESS =====
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

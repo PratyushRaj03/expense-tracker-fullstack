@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Default deny: no files can be read or written via client SDK
+    // The application does not use Firebase Storage for user file uploads
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

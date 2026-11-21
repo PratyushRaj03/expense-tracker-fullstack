@@ -18,11 +18,16 @@ import {
     deleteDoc,
     doc,
     updateDoc,
-    setDoc,           // ← For creating user profiles
-    getDoc            // ← For getting single documents
+    setDoc,
+    getDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import {
+    initializeAppCheck,
+    ReCaptchaEnterpriseProvider,
+    ReCaptchaV3Provider
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js';
 
-// Your Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyA8H1z1L2u0MS4yDd_Sb5kHaXcN-ni1oZs",
     authDomain: "expense-tracker-app-fb8cc.firebaseapp.com",
@@ -32,26 +37,50 @@ const firebaseConfig = {
     appId: "1:60645129978:web:4394c7718acc46a6d01343"
 };
 
-// Initialize Firebase
+// Initialize Core Firebase Services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// EXPORT EVERYTHING your app needs
+// ===== FIREBASE APP CHECK HARDENING =====
+// App Check protects backend resources from abuse (e.g. bots, scrapers).
+// For local testing, debug tokens can be set in self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+let appCheck = null;
+
+try {
+    // When running in localhost/dev, enable debug token if requested
+    if (typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+
+    // App Check reCAPTCHA Enterprise / v3 site key (configured in Firebase Console)
+    const recaptchaSiteKey = window.__RECAPTCHA_SITE_KEY__ || null;
+
+    if (recaptchaSiteKey && typeof initializeAppCheck === 'function') {
+        appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+            isTokenAutoRefreshEnabled: true
+        });
+    }
+} catch (error) {
+    // Graceful fallback: App Check will be active once reCAPTCHA site key is registered in Console
+    console.warn("App Check not initialized:", error.message);
+}
+
 export { 
-    // App instances
     app, 
     auth, 
     db,
+    appCheck,
     
-    // AUTH FUNCTIONS
+    // Auth Functions
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signOut,              // ← NOW EXPORTED - this fixes your error
+    signOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
     
-    // FIRESTORE FUNCTIONS
+    // Firestore Functions
     collection,
     addDoc,
     getDocs,
@@ -64,4 +93,3 @@ export {
     setDoc,
     getDoc
 };
-

@@ -14,6 +14,13 @@ import {
     onAuthStateChanged
 } from './firebase-config.js';
 
+import {
+    escapeHtml,
+    sanitizeForCSV,
+    sanitizeString,
+    initInactivitySessionTimeout
+} from './security-utils.js';
+
 // ===== DASHBOARD CODE =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Dashboard loaded");
@@ -733,11 +740,10 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // ===== CSV EXPORT =====
+    // ===== CSV EXPORT (PROTECTED AGAINST FORMULA INJECTION) =====
 
     function csvCell(value) {
-        const str = String(value == null ? '' : value);
-        return `"${str.replace(/"/g, '""')}"`;
+        return `"${sanitizeForCSV(value)}"`;
     }
 
     function exportToCSV() {
@@ -955,11 +961,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== CHECK AUTHENTICATION =====
+    // ===== CHECK AUTHENTICATION & SESSION LIFECYCLE =====
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            console.log("✅ User authenticated:", user.uid);
             currentUser = user;
+            
+            // Start inactivity session timeout (auto signout after 20 minutes idle)
+            initInactivitySessionTimeout(20, async () => {
+                showNotification('Session expired due to inactivity. Signing out...', 'info');
+                try {
+                    await signOut(auth);
+                } catch (e) {}
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.replace('index.html?timeout=1');
+            });
             
             try {
                 const userRef = doc(db, "users", user.uid);
@@ -984,7 +1000,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (error) {
-                console.error("Error loading user profile:", error);
                 if (userNameSpan) userNameSpan.textContent = user.displayName || 'User';
                 if (userEmailSpan) userEmailSpan.textContent = user.email;
             }
@@ -999,9 +1014,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dateInput) dateInput.value = today;
             
         } else {
-            console.log("❌ No user authenticated - staying on dashboard");
-            // DO NOT redirect - let the dashboard show empty state
-            // This prevents the redirect loop
+            currentUser = null;
+            window.location.replace('index.html');
         }
     });
 
@@ -1045,6 +1059,9 @@ document.addEventListener('DOMContentLoaded', function() {
         exportPDFBtn.addEventListener('click', exportToPDF);
     }
 
+    // Allowed expense categories matching server-side validation
+    const ALLOWED_CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Healthcare', 'Education', 'Other'];
+
     // ===== ADD EXPENSE FORM SUBMISSION =====
     if (expenseForm) {
         expenseForm.addEventListener('submit', async function(event) {
@@ -1055,28 +1072,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const amount = parseFloat(document.getElementById('amount').value);
+            const rawAmount = document.getElementById('amount').value;
+            const amount = parseFloat(rawAmount);
             const category = document.getElementById('category').value;
-            const description = document.getElementById('description').value;
+            const description = sanitizeString(document.getElementById('description').value, 500);
             const date = document.getElementById('date').value;
             
-            if (!amount || amount <= 0) {
-                showNotification('Please enter a valid amount', 'error');
+            if (isNaN(amount) || amount <= 0 || amount > 10000000) {
+                showNotification('Please enter a valid amount between 0.01 and 10,000,000', 'error');
                 return;
             }
             
-            if (!category) {
-                showNotification('Please select a category', 'error');
+            if (!category || !ALLOWED_CATEGORIES.includes(category)) {
+                showNotification('Please select a valid category from the list', 'error');
                 return;
             }
             
-            if (!description.trim()) {
-                showNotification('Please enter a description', 'error');
+            if (!description || description.length < 1 || description.length > 500) {
+                showNotification('Please enter a description (1-500 characters)', 'error');
                 return;
             }
             
-            if (!date) {
-                showNotification('Please select a date', 'error');
+            if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
+                showNotification('Please select a valid date (YYYY-MM-DD)', 'error');
                 return;
             }
             
@@ -1089,16 +1107,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const expenseData = {
                     amount: amount,
                     category: category,
-                    description: description.trim(),
+                    description: description,
                     date: date,
                     createdAt: new Date().toISOString(),
                     userId: currentUser.uid
                 };
                 
                 const expensesRef = collection(db, "users", currentUser.uid, "expenses");
-                const docRef = await addDoc(expensesRef, expenseData);
-                
-                console.log("✅ Expense added with ID:", docRef.id);
+                await addDoc(expensesRef, expenseData);
                 
                 expenseForm.reset();
                 
@@ -1106,12 +1122,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('date').value = today;
                 
                 showNotification(`Expense added successfully! (${formatAmount(amount)})`, 'success');
-                
                 await loadExpenses(currentUser.uid);
                 
             } catch (error) {
-                console.error("❌ Error adding expense:", error);
-                showNotification('Failed to add expense: ' + error.message, 'error');
+                showNotification('Failed to add expense. Please check your inputs.', 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
@@ -1119,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== LOAD EXPENSES FUNCTION =====
+    // ===== LOAD EXPENSES FUNCTION (HARDENED AGAINST STORED XSS) =====
     async function loadExpenses(userId) {
         if (!expensesContainer) return;
         
@@ -1155,19 +1169,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const expense = { id: doc.id, ...doc.data() };
                 expenses.push(expense);
                 
-                const categoryClass = expense.category.toLowerCase().replace(/\s+/g, '-');
+                const safeId = escapeHtml(expense.id);
+                const safeCategory = escapeHtml(expense.category);
+                const safeDesc = escapeHtml(expense.description);
+                const categoryClass = escapeHtml(String(expense.category || '').toLowerCase().replace(/[^a-z0-9\-]/g, '-'));
+                const formattedDate = escapeHtml(formatDate(expense.date));
+                const formattedAmount = escapeHtml(formatAmount(expense.amount));
                 
                 html += `
-                    <tr id="expense-${expense.id}">
-                        <td>${formatDate(expense.date)}</td>
-                        <td><span class="category-badge category-${categoryClass}">${expense.category}</span></td>
-                        <td>${expense.description}</td>
-                        <td class="amount-positive">${formatAmount(expense.amount)}</td>
+                    <tr id="expense-${safeId}">
+                        <td>${formattedDate}</td>
+                        <td><span class="category-badge category-${categoryClass}">${safeCategory}</span></td>
+                        <td>${safeDesc}</td>
+                        <td class="amount-positive">${formattedAmount}</td>
                         <td>
-                            <button onclick="editExpense('${expense.id}')" class="action-btn edit-btn">
+                            <button type="button" data-action="edit" data-id="${safeId}" class="action-btn edit-btn" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteExpense('${expense.id}')" class="action-btn delete-btn">
+                            <button type="button" data-action="delete" data-id="${safeId}" class="action-btn delete-btn" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -1178,6 +1197,19 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</tbody></table>';
             expensesContainer.innerHTML = html;
             
+            // Attach event delegation listener once to prevent duplicate handlers
+            if (!expensesContainer._hasSecDelegation) {
+                expensesContainer._hasSecDelegation = true;
+                expensesContainer.addEventListener('click', function(e) {
+                    const btn = e.target.closest('button[data-action]');
+                    if (!btn) return;
+                    const action = btn.dataset.action;
+                    const id = btn.dataset.id;
+                    if (action === 'edit') editExpense(id);
+                    if (action === 'delete') deleteExpense(id);
+                });
+            }
+
             window.allExpenses = expenses;
             
             updateStats(expenses);
@@ -1187,12 +1219,10 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBudgetDisplay();
             
         } catch (error) {
-            console.error("❌ Error loading expenses:", error);
             expensesContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-exclamation-circle"></i>
                     <p>Error loading expenses.</p>
-                    <p style="font-size:12px; color:#ef4444;">${error.message}</p>
                 </div>
             `;
         }
@@ -1266,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const amountLabel = document.querySelector('label[for="editAmount"]');
             if (amountLabel) {
-                amountLabel.innerHTML = `Amount (${currencySymbols[selectedCurrency] || '$'})`;
+                amountLabel.textContent = `Amount (${currencySymbols[selectedCurrency] || '$'})`;
             }
             
             editModal.style.display = 'block';
@@ -1282,10 +1312,33 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('Please log in first', 'error');
             return;
         }
+
+        const amount = parseFloat(updatedData.amount);
+        const category = updatedData.category;
+        const description = sanitizeString(updatedData.description, 500);
+        const date = updatedData.date;
+
+        if (isNaN(amount) || amount <= 0 || amount > 10000000) {
+            showNotification('Please enter a valid amount between 0.01 and 10,000,000', 'error');
+            return;
+        }
+
+        if (!category || !ALLOWED_CATEGORIES.includes(category)) {
+            showNotification('Please select a valid category from the list', 'error');
+            return;
+        }
+
+        if (!description || description.length < 1 || description.length > 500) {
+            showNotification('Description must be between 1 and 500 characters', 'error');
+            return;
+        }
+
+        if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
+            showNotification('Invalid date format', 'error');
+            return;
+        }
         
         try {
-            console.log("🔄 Updating expense:", expenseId, updatedData);
-            
             const updateBtn = document.getElementById('updateExpenseBtn');
             const originalText = updateBtn.innerHTML;
             updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
@@ -1294,26 +1347,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const expenseRef = doc(db, "users", currentUser.uid, "expenses", expenseId);
             
             await updateDoc(expenseRef, {
-                amount: updatedData.amount,
-                category: updatedData.category,
-                description: updatedData.description,
-                date: updatedData.date,
+                amount: amount,
+                category: category,
+                description: description,
+                date: date,
                 updatedAt: new Date().toISOString()
             });
             
-            console.log("✅ Expense updated successfully!");
-            
             closeEditModal();
-            showNotification(`Expense updated successfully! (${formatAmount(updatedData.amount)})`, 'success');
+            showNotification(`Expense updated successfully! (${formatAmount(amount)})`, 'success');
             await loadExpenses(currentUser.uid);
             
         } catch (error) {
-            console.error("❌ Error updating expense:", error);
-            showNotification('Failed to update expense: ' + error.message, 'error');
+            showNotification('Failed to update expense. Please check your inputs.', 'error');
         } finally {
             const updateBtn = document.getElementById('updateExpenseBtn');
-            updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Expense';
-            updateBtn.disabled = false;
+            if (updateBtn) {
+                updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Expense';
+                updateBtn.disabled = false;
+            }
         }
     }
 
@@ -1451,9 +1503,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
         notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
+            <i class="fas ${iconClass}"></i>
+            <span>${escapeHtml(message)}</span>
         `;
         
         notification.style.position = 'fixed';

@@ -4,6 +4,11 @@ import {
 } from './firebase-config.js';
 
 import { getErrorMessage } from './auth-errors.js';
+import { 
+    checkPasswordResetLimit, 
+    recordPasswordResetAttempt, 
+    escapeHtml 
+} from './security-utils.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     const forgotForm = document.getElementById('forgotPasswordForm');
@@ -13,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnText = document.querySelector('.btn-text');
     const btnLoader = document.querySelector('.btn-loader');
     const successMessage = document.getElementById('successMessage');
+
+    let cooldownTimer = null;
 
     function validateEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +37,28 @@ document.addEventListener('DOMContentLoaded', function() {
         emailInput.classList.remove('error');
     }
 
+    function startResetCooldown(seconds) {
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        resetBtn.disabled = true;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+
+        let remaining = seconds;
+        btnText.textContent = `Wait (${remaining}s)`;
+
+        cooldownTimer = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(cooldownTimer);
+                cooldownTimer = null;
+                resetBtn.disabled = false;
+                btnText.textContent = 'Send Reset Link';
+            } else {
+                btnText.textContent = `Wait (${remaining}s)`;
+            }
+        }, 1000);
+    }
+
     function showNotification(message, type = 'error') {
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -38,9 +67,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        
         notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
+            <i class="fas ${iconClass}"></i>
+            <span>${escapeHtml(message)}</span>
         `;
         
         notification.style.position = 'fixed';
@@ -68,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const email = emailInput.value.trim();
         
-        // Validate email
+        // Validate email format
         if (!email) {
             showError('Please enter your email address');
             return;
@@ -79,6 +110,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Check rate limiting on password resets
+        const rateCheck = checkPasswordResetLimit(email);
+        if (!rateCheck.allowed) {
+            showError(rateCheck.message);
+            showNotification(rateCheck.message, 'error');
+            startResetCooldown(rateCheck.remainingSeconds);
+            return;
+        }
+
         clearError();
         
         // Show loading state
@@ -87,33 +127,45 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLoader.style.display = 'inline-block';
         
         try {
-            // Send password reset email
+            // Record reset request attempt for rate limiting
+            recordPasswordResetAttempt(email);
+
+            // Send password reset email via Firebase
             await sendPasswordResetEmail(auth, email);
             
-            console.log('✅ Password reset email sent to:', email);
-            
-            // Hide form, show success message
+            // Standard success display
             document.querySelectorAll('.input-group').forEach(el => el.style.display = 'none');
             resetBtn.style.display = 'none';
-            successMessage.style.display = 'block';
+            if (successMessage) successMessage.style.display = 'block';
             
-            showNotification('Reset link sent! Check your email.', 'success');
+            showNotification('If an account exists with this email, a reset link has been sent.', 'success');
             
         } catch (error) {
-            console.error('❌ Password reset error:', error);
-            
+            // Anti-enumeration: If user is not found, show the exact same generic success message
+            if (error.code === 'auth/user-not-found') {
+                document.querySelectorAll('.input-group').forEach(el => el.style.display = 'none');
+                resetBtn.style.display = 'none';
+                if (successMessage) successMessage.style.display = 'block';
+                showNotification('If an account exists with this email, a reset link has been sent.', 'success');
+                return;
+            }
+
+            // Real network/rate-limiting errors
             const errorMessage = getErrorMessage(error);
             showError(errorMessage);
             showNotification(errorMessage, 'error');
             
-            // Reset button state
             resetBtn.disabled = false;
             btnText.style.display = 'inline';
             btnLoader.style.display = 'none';
+
+            if (error.code === 'auth/too-many-requests') {
+                startResetCooldown(300); // 5 min cooldown for too many requests
+            }
         }
     });
 
-    // Real-time validation
+    // Real-time email validation
     emailInput.addEventListener('input', function() {
         if (this.value && validateEmail(this.value)) {
             this.style.borderColor = '#22c55e';

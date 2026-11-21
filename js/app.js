@@ -4,6 +4,12 @@ import {
 } from './firebase-config.js';
 
 import { getErrorMessage } from './auth-errors.js';
+import { 
+    checkLoginRateLimit, 
+    recordFailedLoginAttempt, 
+    clearLoginRateLimit,
+    escapeHtml 
+} from './security-utils.js';
 
 // Single DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +26,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const forgotLink = document.getElementById('forgotPassword');
     const socialBtns = document.querySelectorAll('.social-btn');
     const rememberCheckbox = document.getElementById('remember');
+
+    let cooldownTimer = null;
+
+    // Check for session timeout redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('timeout') === '1') {
+        showNotification('Your session expired due to inactivity. Please sign in again.', 'info');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // ===== COOLDOWN TIMER HELPER =====
+    function startCooldownTimer(seconds) {
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        loginBtn.disabled = true;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+
+        let remaining = seconds;
+        btnText.textContent = `Locked (${remaining}s)`;
+
+        cooldownTimer = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(cooldownTimer);
+                cooldownTimer = null;
+                loginBtn.disabled = false;
+                btnText.textContent = 'Sign In';
+            } else {
+                btnText.textContent = `Locked (${remaining}s)`;
+            }
+        }, 1000);
+    }
+
+    // Check rate limit on email blur or change
+    function checkEmailRateLimit() {
+        const email = emailInput.value.trim();
+        if (!email) return;
+        const status = checkLoginRateLimit(email);
+        if (status.isLocked) {
+            showNotification(status.message, 'error');
+            startCooldownTimer(status.remainingSeconds);
+        }
+    }
+
+    emailInput.addEventListener('blur', checkEmailRateLimit);
 
     // ===== PASSWORD TOGGLE FUNCTIONALITY =====
     if (togglePassword) {
@@ -45,32 +96,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validatePassword(password) {
-        return password.length >= 6;
+        return password && password.length >= 6;
     }
 
     // ===== UI FEEDBACK FUNCTIONS =====
     function showNotification(message, type = 'error') {
-        // Remove existing notification
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
             existingNotification.remove();
         }
 
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        
+        const iconClass = type === 'success' 
+            ? 'fa-check-circle' 
+            : type === 'info' 
+                ? 'fa-info-circle' 
+                : 'fa-exclamation-circle';
+
+        const safeMessage = escapeHtml(message);
         notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
+            <i class="fas ${iconClass}"></i>
+            <span>${safeMessage}</span>
         `;
 
-        // Style notification
         notification.style.position = 'fixed';
         notification.style.top = '20px';
         notification.style.right = '20px';
         notification.style.padding = '16px 24px';
         notification.style.borderRadius = '8px';
-        notification.style.background = type === 'success' ? '#22c55e' : '#ef4444';
+        notification.style.background = type === 'success' ? '#22c55e' : type === 'info' ? '#3b82f6' : '#ef4444';
         notification.style.color = 'white';
         notification.style.fontWeight = '500';
         notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
@@ -82,13 +138,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.body.appendChild(notification);
 
-        // Auto remove after 3 seconds
         setTimeout(() => {
             notification.style.animation = 'slideIn 0.3s ease reverse';
             setTimeout(() => {
                 notification.remove();
             }, 300);
-        }, 3000);
+        }, 4000);
     }
 
     // ===== REAL-TIME VALIDATION =====
@@ -99,11 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.value && !validateEmail(this.value)) {
             this.style.borderColor = '#ef4444';
             icon.style.color = '#ef4444';
-            
-            this.classList.add('shake');
-            setTimeout(() => {
-                this.classList.remove('shake');
-            }, 500);
         } else if (this.value && validateEmail(this.value)) {
             this.style.borderColor = '#22c55e';
             icon.style.color = '#22c55e';
@@ -120,8 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.value && !validatePassword(this.value)) {
             this.style.borderColor = '#ef4444';
             icon.style.color = '#ef4444';
-            
-            showPasswordStrength(this.value);
         } else if (this.value && validatePassword(this.value)) {
             this.style.borderColor = '#22c55e';
             icon.style.color = '#22c55e';
@@ -130,31 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.style.color = '';
         }
     });
-
-    // ===== PASSWORD STRENGTH INDICATOR =====
-    function showPasswordStrength(password) {
-        let strength = 0;
-        if (password.length >= 6) strength++;
-        if (password.match(/[a-z]+/)) strength++;
-        if (password.match(/[A-Z]+/)) strength++;
-        if (password.match(/[0-9]+/)) strength++;
-        if (password.match(/[$@#&!]+/)) strength++;
-
-        const strengthColors = ['#ef4444', '#f59e0b', '#f59e0b', '#22c55e', '#22c55e'];
-        const strengthTexts = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
-
-        let indicator = document.querySelector('.password-strength');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'password-strength';
-            passwordInput.parentNode.appendChild(indicator);
-        }
-
-        indicator.style.marginTop = '8px';
-        indicator.style.fontSize = '12px';
-        indicator.style.color = strengthColors[strength];
-        indicator.textContent = `Password strength: ${strengthTexts[strength]}`;
-    }
 
     // ===== FIREBASE LOGIN FUNCTION =====
     async function loginUser(email, password) {
@@ -172,11 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== FORM SUBMISSION WITH FIREBASE =====
+    // ===== FORM SUBMISSION WITH FIREBASE & BRUTE-FORCE HARDENING =====
     loginForm.addEventListener('submit', async function(event) {
         event.preventDefault();
 
-        // Get values
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
@@ -192,9 +214,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!validatePassword(password)) {
-            showNotification('Password must be at least 6 characters long', 'error');
-            passwordInput.focus();
+        // Check brute force cooldown before making any network request
+        const rateCheck = checkLoginRateLimit(email);
+        if (rateCheck.isLocked) {
+            showNotification(rateCheck.message, 'error');
+            startCooldownTimer(rateCheck.remainingSeconds);
             return;
         }
 
@@ -204,7 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLoader.style.display = 'inline-block';
         loginBtn.style.opacity = '0.8';
 
-        // Remove any existing error classes
         emailInput.classList.remove('error');
         passwordInput.classList.remove('error');
 
@@ -218,64 +241,42 @@ document.addEventListener('DOMContentLoaded', function() {
         loginBtn.style.opacity = '1';
 
         if (result.success) {
-            // Login successful!
-            console.log('User logged in:', result.user.uid);
-            
-            // Save email if "Remember me" is checked
+            // Authentication succeeded: clear rate limiter for this email
+            clearLoginRateLimit(email);
+
+            // Save email if "Remember me" is checked (only store email, never credentials)
             if (rememberCheckbox && rememberCheckbox.checked) {
                 localStorage.setItem('rememberEmail', email);
             } else {
                 localStorage.removeItem('rememberEmail');
             }
             
-            // Show success message
             showNotification('Login successful! Redirecting to dashboard...', 'success');
-            
-            // Clear password field for security
             passwordInput.value = '';
             
-            // Remove password strength indicator
-            const indicator = document.querySelector('.password-strength');
-            if (indicator) indicator.remove();
-            
-            // Redirect to dashboard after 1.5 seconds
             setTimeout(() => {
                 window.location.href = 'dashboard.html';
-            }, 1500);
+            }, 1000);
             
         } else {
-            // Login failed - show user-friendly error message
-            const errorMessage = getErrorMessage(result.error);
-            showNotification(errorMessage, 'error');
-            
-            // Log error for debugging
-            console.error('Login error details:', result.error);
-            
-            // Field-specific error handling
-            switch (result.error.code) {
-                case 'auth/invalid-email':
-                case 'auth/user-not-found':
-                case 'auth/user-disabled':
-                    emailInput.classList.add('error');
-                    emailInput.focus();
-                    break;
-                    
-                case 'auth/wrong-password':
-                case 'auth/too-many-requests':
-                    passwordInput.classList.add('error');
-                    passwordInput.value = '';  // Clear password
-                    passwordInput.focus();
-                    break;
-                    
-                default:
-                    // For network errors etc., don't highlight specific field
-                    break;
+            // Authentication failed: record attempt and calculate progressive cooldown
+            const throttleStatus = recordFailedLoginAttempt(email);
+
+            if (throttleStatus.isLocked) {
+                showNotification(throttleStatus.message, 'error');
+                startCooldownTimer(throttleStatus.remainingSeconds);
+            } else {
+                const errorMessage = getErrorMessage(result.error);
+                showNotification(errorMessage, 'error');
             }
+
+            passwordInput.classList.add('error');
+            passwordInput.value = '';
+            passwordInput.focus();
         }
     });
 
     // ===== OTHER EVENT HANDLERS =====
-    // ===== FORGOT PASSWORD LINK =====
     if (forgotLink) {
         forgotLink.addEventListener('click', function(event) {
             event.preventDefault();
@@ -288,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         socialBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const provider = this.classList.contains('google') ? 'Google' : 'GitHub';
-                showNotification(`${provider} login will be implemented later!`, 'info');
+                showNotification(`${provider} login is not enabled for this project.`, 'info');
             });
         });
     }
@@ -314,61 +315,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Smooth scroll to top when page loads
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-
-    // Add intersection observer for fade-in effects
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, observerOptions);
-
-    // Observe elements
-    document.querySelectorAll('.input-group, .login-btn, .social-btn').forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-        observer.observe(el);
-    });
-
     // Add animation keyframes if they don't exist
     if (!document.querySelector('#animation-styles')) {
         const style = document.createElement('style');
         style.id = 'animation-styles';
         style.textContent = `
             @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
             }
-            .shake {
-                animation: shake 0.5s ease-in-out;
-            }
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-            .pulse {
-                animation: pulse 0.3s ease;
-            }
+            .pulse { animation: pulse 0.3s ease; }
             @keyframes pulse {
                 0% { transform: scale(1); }
                 50% { transform: scale(1.1); }

@@ -1,5 +1,15 @@
 {
+  "name": "expense-tracker-fullstack",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:security": "node tests/security-utils.test.js",
+    "test:rules": "firebase emulators:exec --only firestore \"node tests/security-rules.test.js\""
+  },
   "dependencies": {
     "firebase": "^12.9.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2"
   }
 }
