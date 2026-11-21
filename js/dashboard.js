@@ -118,6 +118,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return (parseFloat(amountInCurrency) || 0) / rate;
     }
 
+    function convertCurrency(amount, fromCurr, toCurr) {
+        const num = parseFloat(amount);
+        if (isNaN(num) || num === 0) return 0;
+        if (fromCurr === toCurr) return num;
+        const fromRate = getExchangeRate(fromCurr);
+        const toRate = getExchangeRate(toCurr);
+        if (!fromRate || fromRate <= 0) return num;
+        const inUSD = num / fromRate;
+        return inUSD * toRate;
+    }
+
     async function fetchLiveExchangeRates() {
         try {
             const res = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -134,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateBudgetDisplay();
                         updateStats(window.allExpenses || []);
                         updateCharts(window.allExpenses || []);
-                        await loadExpenses(currentUser.uid);
+                        renderExpensesTable(window.allExpenses || []);
                     }
                 }
             }
@@ -225,13 +236,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadUserCurrency(userId) {
         try {
+            const localPref = localStorage.getItem('preferredCurrency');
+            if (localPref && currencySymbols[localPref]) {
+                selectedCurrency = localPref;
+                if (currencySelect) currencySelect.value = selectedCurrency;
+                if (currencySymbolEl) currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
+            }
+            
             const userRef = doc(db, "users", userId);
             const userSnap = await getDoc(userRef);
             
             if (userSnap.exists()) {
                 const userData = userSnap.data();
-                if (userData.preferredCurrency) {
+                if (userData.preferredCurrency && currencySymbols[userData.preferredCurrency]) {
                     selectedCurrency = userData.preferredCurrency;
+                    localStorage.setItem('preferredCurrency', selectedCurrency);
                     
                     if (currencySelect) {
                         currencySelect.value = selectedCurrency;
@@ -376,14 +395,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressBar = document.getElementById('budgetProgressBar');
         const budgetWarning = document.getElementById('budgetWarning');
         const warningMessage = document.getElementById('warningMessage');
+        const budgetInput = document.getElementById('monthlyBudget');
         
         if (currencySymbolEl) {
             currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
         }
+
+        const isFormOpen = budgetForm && budgetForm.style.display === 'block';
         
         if (currentBudget > 0) {
-            if (budgetDisplay) budgetDisplay.style.display = 'block';
-            if (budgetForm) budgetForm.style.display = 'none';
+            if (!isFormOpen) {
+                if (budgetDisplay) budgetDisplay.style.display = 'block';
+                if (budgetForm) budgetForm.style.display = 'none';
+            }
             if (setBudgetBtn) setBudgetBtn.innerHTML = '<i class="fas fa-pencil-alt"></i> Edit Budget';
             
             const remaining = currentBudget - currentMonthSpent;
@@ -429,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } else {
             if (budgetDisplay) budgetDisplay.style.display = 'none';
-            if (budgetForm) budgetForm.style.display = 'none';
+            if (!isFormOpen && budgetForm) budgetForm.style.display = 'none';
             if (setBudgetBtn) setBudgetBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Set Budget';
         }
     }
@@ -449,9 +473,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const budgetInput = document.getElementById('monthlyBudget');
-            if (budgetInput && currentBudget > 0) {
-                const converted = convertFromUSD(currentBudget, selectedCurrency);
-                budgetInput.value = selectedCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
+            if (budgetInput) {
+                if (currentBudget > 0) {
+                    const converted = convertFromUSD(currentBudget, selectedCurrency);
+                    budgetInput.value = selectedCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
+                }
+                budgetInput.focus();
             }
         } else {
             if (budgetForm) budgetForm.style.display = 'none';
@@ -604,8 +631,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `  ${label}: ${formatAmount(value)} (${percentage}%)`;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                return `  ${label}: ${formatAmountRaw(value)} (${percentage}%)`;
                             }
                         }
                     }
@@ -688,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         bodyFont: { family: "'JetBrains Mono', monospace", weight: '600' },
                         callbacks: {
                             label: function(context) {
-                                return `  Total: ${formatAmount(context.raw)}`;
+                                return `  Total: ${formatAmountRaw(context.raw)}`;
                             }
                         }
                     }
@@ -707,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             color: textColorBar,
                             font: { size: 11, family: "'JetBrains Mono', monospace" },
                             callback: function(value) {
-                                return formatAmount(value);
+                                return formatAmountRaw(value);
                             }
                         }
                     }
@@ -1108,39 +1135,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== CURRENCY CHANGE LISTENER =====
     if (currencySelect) {
-        currencySelect.addEventListener('change', async function() {
+        currencySelect.addEventListener('change', function() {
+            const oldCurrency = selectedCurrency;
             const newCurrency = this.value;
+            if (!newCurrency || newCurrency === oldCurrency) return;
             
-            if (!currentUser) {
-                showNotification('Please log in first', 'error');
-                return;
+            // 1. Immediately update active currency state & localStorage
+            selectedCurrency = newCurrency;
+            localStorage.setItem('preferredCurrency', newCurrency);
+            
+            // 2. Update currency symbol displays across the DOM
+            const newSymbol = currencySymbols[newCurrency] || '$';
+            if (currencySymbolEl) {
+                currencySymbolEl.textContent = newSymbol;
             }
             
-            const saved = await saveUserCurrency(currentUser.uid, newCurrency);
-            
-            if (saved) {
-                selectedCurrency = newCurrency;
-                
-                if (currencySymbolEl) {
-                    currencySymbolEl.textContent = currencySymbols[selectedCurrency] || '$';
-                }
+            const amountLabel = document.querySelector('label[for="amount"]');
+            if (amountLabel) {
+                amountLabel.textContent = `Transaction Amount (${newSymbol})`;
+            }
 
-                const amountLabel = document.querySelector('label[for="amount"]');
-                if (amountLabel) {
-                    amountLabel.textContent = `Transaction Amount (${currencySymbols[selectedCurrency] || '$'})`;
+            const editAmountLabel = document.querySelector('label[for="editAmount"]');
+            if (editAmountLabel) {
+                editAmountLabel.textContent = `Transaction Amount (${newSymbol})`;
+            }
+            
+            // 3. Actively convert user inputs currently entered in forms
+            // A) Budget input field:
+            const budgetInput = document.getElementById('monthlyBudget');
+            if (budgetInput) {
+                const enteredVal = parseFloat(budgetInput.value);
+                if (!isNaN(enteredVal) && enteredVal > 0) {
+                    const converted = convertCurrency(enteredVal, oldCurrency, newCurrency);
+                    budgetInput.value = newCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
+                } else if (currentBudget > 0) {
+                    const converted = convertFromUSD(currentBudget, newCurrency);
+                    budgetInput.value = newCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
                 }
-                
-                updateStats(window.allExpenses || []);
-                updateCharts(window.allExpenses || []);
-                updateBudgetDisplay();
-                await loadExpenses(currentUser.uid);
-                
-                const rateVal = getExchangeRate(selectedCurrency);
-                const currencyName = currencySelect.options[currencySelect.selectedIndex].text;
-                showNotification(`Currency switched to ${currencyName} (1 USD ≈ ${formatAmountWithCommas(rateVal, selectedCurrency)} ${selectedCurrency})`, 'success');
-            } else {
-                showNotification('Failed to save currency preference', 'error');
-                currencySelect.value = selectedCurrency;
+            }
+            
+            // B) Add expense amount input field:
+            const amountInput = document.getElementById('amount');
+            if (amountInput) {
+                const enteredVal = parseFloat(amountInput.value);
+                if (!isNaN(enteredVal) && enteredVal > 0) {
+                    const converted = convertCurrency(enteredVal, oldCurrency, newCurrency);
+                    amountInput.value = newCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
+                }
+            }
+            
+            // C) Edit expense modal input field:
+            const editAmountInput = document.getElementById('editAmount');
+            if (editAmountInput) {
+                const enteredVal = parseFloat(editAmountInput.value);
+                if (!isNaN(enteredVal) && enteredVal > 0) {
+                    const converted = convertCurrency(enteredVal, oldCurrency, newCurrency);
+                    editAmountInput.value = newCurrency === 'JPY' ? Math.round(converted) : parseFloat(converted.toFixed(2));
+                }
+            }
+            
+            // 4. Update stats cards, budget summary, charts, and expenses ledger
+            updateBudgetDisplay();
+            updateStats(window.allExpenses || []);
+            updateCharts(window.allExpenses || []);
+            renderExpensesTable(window.allExpenses || []);
+            
+            // 5. Show toast notification demonstrating concrete conversion
+            const sampleUSD = 100;
+            const sampleConverted = convertCurrency(sampleUSD, 'USD', newCurrency);
+            const sampleStr = formatAmountRaw(sampleConverted, newCurrency);
+            showNotification(`Currency converted to ${newCurrency} ($100 USD = ${sampleStr})`, 'success');
+            
+            // 6. Asynchronously save preference to Firestore if logged in
+            if (currentUser) {
+                saveUserCurrency(currentUser.uid, newCurrency).catch(err => {
+                    console.warn("Could not save currency preference to cloud:", err);
+                });
             }
         });
     }
@@ -1236,6 +1306,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== RENDER EXPENSES TABLE (SYNCHRONOUS & SAFE) =====
+    function renderExpensesTable(expenses) {
+        if (!expensesContainer) return;
+        
+        if (!expenses || expenses.length === 0) {
+            expensesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-receipt"></i>
+                    <p>No expenses yet. Add your first expense!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<table class="expenses-table">';
+        html += '<thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead>';
+        html += '<tbody>';
+        
+        expenses.forEach((expense) => {
+            const safeId = escapeHtml(expense.id);
+            const safeCategory = escapeHtml(expense.category);
+            const safeDesc = escapeHtml(expense.description);
+            const categoryClass = escapeHtml(String(expense.category || '').toLowerCase().replace(/[^a-z0-9\-]/g, '-'));
+            const formattedDate = escapeHtml(formatDate(expense.date));
+            const formattedAmount = escapeHtml(formatAmount(expense.amount));
+            
+            html += `
+                <tr id="expense-${safeId}">
+                    <td>${formattedDate}</td>
+                    <td><span class="category-badge category-${categoryClass}">${safeCategory}</span></td>
+                    <td>${safeDesc}</td>
+                    <td class="amount-positive">${formattedAmount}</td>
+                    <td>
+                        <button type="button" data-action="edit" data-id="${safeId}" class="action-btn edit-btn" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" data-action="delete" data-id="${safeId}" class="action-btn delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        expensesContainer.innerHTML = html;
+        
+        // Attach event delegation listener once to prevent duplicate handlers
+        if (!expensesContainer._hasSecDelegation) {
+            expensesContainer._hasSecDelegation = true;
+            expensesContainer.addEventListener('click', function(e) {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                if (action === 'edit') editExpense(id);
+                if (action === 'delete') deleteExpense(id);
+            });
+        }
+    }
+
     // ===== LOAD EXPENSES FUNCTION (HARDENED AGAINST STORED XSS) =====
     async function loadExpenses(userId) {
         if (!expensesContainer) return;
@@ -1248,76 +1379,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const querySnapshot = await getDocs(q);
             
             if (querySnapshot.empty) {
-                expensesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-receipt"></i>
-                        <p>No expenses yet. Add your first expense!</p>
-                    </div>
-                `;
                 window.allExpenses = [];
+                renderExpensesTable([]);
                 updateStats([]);
                 updateCharts([]);
-                
                 await calculateMonthlySpending();
                 updateBudgetDisplay();
                 return;
             }
             
             let expenses = [];
-            let html = '<table class="expenses-table">';
-            html += '<thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead>';
-            html += '<tbody>';
-            
             querySnapshot.forEach((doc) => {
-                const expense = { id: doc.id, ...doc.data() };
-                expenses.push(expense);
-                
-                const safeId = escapeHtml(expense.id);
-                const safeCategory = escapeHtml(expense.category);
-                const safeDesc = escapeHtml(expense.description);
-                const categoryClass = escapeHtml(String(expense.category || '').toLowerCase().replace(/[^a-z0-9\-]/g, '-'));
-                const formattedDate = escapeHtml(formatDate(expense.date));
-                const formattedAmount = escapeHtml(formatAmount(expense.amount));
-                
-                html += `
-                    <tr id="expense-${safeId}">
-                        <td>${formattedDate}</td>
-                        <td><span class="category-badge category-${categoryClass}">${safeCategory}</span></td>
-                        <td>${safeDesc}</td>
-                        <td class="amount-positive">${formattedAmount}</td>
-                        <td>
-                            <button type="button" data-action="edit" data-id="${safeId}" class="action-btn edit-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button type="button" data-action="delete" data-id="${safeId}" class="action-btn delete-btn" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                expenses.push({ id: doc.id, ...doc.data() });
             });
             
-            html += '</tbody></table>';
-            expensesContainer.innerHTML = html;
-            
-            // Attach event delegation listener once to prevent duplicate handlers
-            if (!expensesContainer._hasSecDelegation) {
-                expensesContainer._hasSecDelegation = true;
-                expensesContainer.addEventListener('click', function(e) {
-                    const btn = e.target.closest('button[data-action]');
-                    if (!btn) return;
-                    const action = btn.dataset.action;
-                    const id = btn.dataset.id;
-                    if (action === 'edit') editExpense(id);
-                    if (action === 'delete') deleteExpense(id);
-                });
-            }
-
             window.allExpenses = expenses;
-            
+            renderExpensesTable(expenses);
             updateStats(expenses);
             updateCharts(expenses);
-            
             await calculateMonthlySpending();
             updateBudgetDisplay();
             
