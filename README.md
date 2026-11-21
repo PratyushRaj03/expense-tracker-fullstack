@@ -79,25 +79,31 @@ The application empowers users to monitor personal finances, analyze monthly spe
 ```
 expense-tracker-fullstack/
 ├── css/
-│   ├── dashboard.css       # Core dashboard layout, widgets, themes & animations
-│   └── style.css           # Auth pages styles (Login, Signup, Forgot Password)
+│   ├── dashboard.css       # Premium Editorial Fintech dashboard design system
+│   └── style.css           # Auth pages design system tokens & layout
 ├── js/
 │   ├── app.js              # Login flow, validations & UI notifications
 │   ├── auth-errors.js      # Centralized Firebase authentication error mapper
 │   ├── dashboard.js        # Main dashboard logic: Firestore CRUD, Charts, Budget, Exports
 │   ├── firebase-config.js  # Firebase SDK initialization & exported services
 │   ├── forgot-password.js  # Password reset logic & email triggers
+│   ├── security-utils.js   # XSS escaping, CSV sanitization, brute-force rate limiter
 │   └── signup.js           # Signup validation, strength checker & modal interactions
+├── tests/
+│   ├── security-rules.test.js # Firestore Security Rules unit test suite (29 tests)
+│   └── security-utils.test.js # Client-side security utilities test suite (27 tests)
 ├── .firebaserc             # Firebase project configuration
 ├── .gitignore              # Git ignore rules for dependencies and build artifacts
 ├── .vercelignore           # Vercel deployment exclusions
 ├── 404.html                # Custom 404 page for Firebase hosting
-├── dashboard.html          # Main application dashboard
-├── firebase.json           # Firebase Hosting rewrites and rules
+├── dashboard.html          # Main application dashboard (Editorial Wealth Ledger)
+├── firebase.json           # Firebase Hosting rewrites, headers & CSP
+├── firestore.rules         # Hardened Firestore security rules (strict schema & UID isolation)
 ├── forgot-password.html    # Password reset view
 ├── index.html              # Landing and login page
-├── package.json            # Project dependencies manifest
+├── package.json            # Project dependencies manifest & test scripts
 ├── signup.html             # User registration page
+├── storage.rules           # Storage security rules (owner-isolated access)
 └── README.md               # Project documentation
 ```
 

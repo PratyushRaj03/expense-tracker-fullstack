@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let monthlyChartInstance = null;
     
     const chartColors = [
-        '#6366F1', '#F43F5E', '#10B981', '#F59E0B', '#3B82F6',
-        '#EC4899', '#14B8A6', '#8B5CF6', '#EF4444', '#22C55E',
+        '#245B48', '#B96B4B', '#5A7D6F', '#D4A373', '#396052',
+        '#8FA89B', '#C98A6E', '#42584E', '#BFA588', '#2D4B3E'
     ];
     
     let currencySymbols = {
@@ -493,8 +493,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emptyDiv) emptyDiv.remove();
         
         const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#94A3B8' : '#475569';
-        const bgColor = isDark ? '#131929' : '#FFFFFF';
+        const textColor = isDark ? '#A6B4AC' : '#57635C';
+        const bgColor = isDark ? '#1F2421' : '#FFFFFF';
 
         categoryChartInstance = new Chart(ctx, {
             type: 'doughnut',
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '62%',
+                cutout: '64%',
                 plugins: {
                     legend: {
                         position: 'right',
@@ -526,13 +526,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     tooltip: {
-                        backgroundColor: isDark ? '#1A2236' : '#ffffff',
-                        titleColor: isDark ? '#F1F5F9' : '#0F172A',
-                        bodyColor: isDark ? '#94A3B8' : '#475569',
-                        borderColor: isDark ? '#1E2D45' : '#E4E8EF',
+                        backgroundColor: isDark ? '#262D29' : '#FFFFFF',
+                        titleColor: isDark ? '#F5F3ED' : '#242A27',
+                        bodyColor: isDark ? '#A6B4AC' : '#57635C',
+                        borderColor: isDark ? '#414D46' : '#E5E1D8',
                         borderWidth: 1,
-                        padding: 10,
+                        padding: 12,
                         cornerRadius: 8,
+                        titleFont: { family: "'DM Sans', sans-serif", weight: '600' },
+                        bodyFont: { family: "'IBM Plex Mono', monospace" },
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
@@ -580,12 +582,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emptyDiv) emptyDiv.remove();
         
         const isDarkBar = document.body.classList.contains('dark-mode');
-        const textColorBar = isDarkBar ? '#94A3B8' : '#475569';
-        const gridColorBar = isDarkBar ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, '#6366F1');
-        gradient.addColorStop(1, '#818CF8');
+        const textColorBar = isDarkBar ? '#A6B4AC' : '#57635C';
+        const gridColorBar = isDarkBar ? 'rgba(245, 243, 237, 0.06)' : 'rgba(36, 42, 39, 0.06)';
+        const barFill = isDarkBar ? '#377760' : '#245B48';
+        const barHover = isDarkBar ? '#489378' : '#1A4335';
 
         monthlyChartInstance = new Chart(ctx, {
             type: 'bar',
@@ -594,9 +594,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Spending',
                     data: monthlyData.data,
-                    backgroundColor: gradient,
-                    hoverBackgroundColor: '#4F46E5',
-                    borderRadius: 8,
+                    backgroundColor: barFill,
+                    hoverBackgroundColor: barHover,
+                    borderRadius: 6,
                     borderSkipped: false,
                 }]
             },
@@ -606,13 +606,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: isDarkBar ? '#1A2236' : '#ffffff',
-                        titleColor: isDarkBar ? '#F1F5F9' : '#0F172A',
-                        bodyColor: isDarkBar ? '#94A3B8' : '#475569',
-                        borderColor: isDarkBar ? '#1E2D45' : '#E4E8EF',
+                        backgroundColor: isDarkBar ? '#262D29' : '#FFFFFF',
+                        titleColor: isDarkBar ? '#F5F3ED' : '#242A27',
+                        bodyColor: isDarkBar ? '#A6B4AC' : '#57635C',
+                        borderColor: isDarkBar ? '#414D46' : '#E5E1D8',
                         borderWidth: 1,
-                        padding: 10,
+                        padding: 12,
                         cornerRadius: 8,
+                        titleFont: { family: "'DM Sans', sans-serif", weight: '600' },
+                        bodyFont: { family: "'IBM Plex Mono', monospace" },
                         callbacks: {
                             label: function(context) {
                                 return `  Total: ${formatAmount(context.raw)}`;
@@ -632,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         border: { display: false, dash: [4, 4] },
                         ticks: {
                             color: textColorBar,
-                            font: { size: 11, family: "'DM Sans', sans-serif" },
+                            font: { size: 11, family: "'IBM Plex Mono', monospace" },
                             callback: function(value) {
                                 return formatAmount(value);
                             }
@@ -1510,14 +1512,17 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         notification.style.position = 'fixed';
-        notification.style.top = '20px';
-        notification.style.right = '20px';
-        notification.style.padding = '16px 24px';
-        notification.style.borderRadius = '8px';
-        notification.style.background = type === 'success' ? '#22c55e' : '#ef4444';
-        notification.style.color = 'white';
+        notification.style.top = '24px';
+        notification.style.right = '24px';
+        notification.style.padding = '14px 22px';
+        notification.style.borderRadius = '10px';
+        notification.style.background = type === 'success' ? '#245B48' : '#B33927';
+        notification.style.color = '#F5F3ED';
+        notification.style.fontFamily = "'DM Sans', sans-serif";
+        notification.style.fontSize = '13.5px';
+        notification.style.fontWeight = '500';
         notification.style.zIndex = '9999';
-        notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        notification.style.boxShadow = '0 6px 20px rgba(36, 42, 39, 0.18)';
         notification.style.display = 'flex';
         notification.style.alignItems = 'center';
         notification.style.gap = '10px';

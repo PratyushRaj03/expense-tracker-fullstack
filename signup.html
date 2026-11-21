@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Tracker | Sign Up</title>
-    <!-- Font Awesome for icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* Improved Modal Styles */
+        /* Policy Modal Styles matching Editorial Fintech */
         .modal {
             display: none;
             position: fixed;
@@ -17,8 +19,8 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
+            background-color: rgba(36, 42, 39, 0.45);
+            backdrop-filter: blur(4px);
             align-items: center;
             justify-content: center;
         }
@@ -28,21 +30,21 @@
         }
 
         .modal-content {
-            background: var(--surface, #ffffff);
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            background: var(--surface, #FFFFFF);
+            border-radius: var(--radius-lg, 14px);
+            box-shadow: var(--shadow-modal, 0 16px 36px rgba(36, 42, 39, 0.12));
             width: 90%;
             max-width: 600px;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
-            animation: modalSlideIn 0.3s ease;
-            border: 1px solid var(--border, #e2e8f0);
+            animation: modalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid var(--border, #E5E1D8);
         }
 
         @keyframes modalSlideIn {
             from {
-                transform: translateY(-30px);
+                transform: translateY(-20px);
                 opacity: 0;
             }
             to {
@@ -56,33 +58,34 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border, #e2e8f0);
+            border-bottom: 1px solid var(--border, #E5E1D8);
         }
 
         .modal-header h3 {
+            font-family: var(--font-serif, 'Newsreader', serif);
             font-size: 20px;
             font-weight: 600;
-            color: var(--text-primary, #0f172a);
+            color: var(--text-primary, #242A27);
             margin: 0;
         }
 
         .close-modal {
-            font-size: 24px;
-            font-weight: 500;
-            color: var(--text-muted, #64748b);
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--text-muted, #7C8A82);
             cursor: pointer;
             width: 32px;
             height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            transition: all 0.2s;
+            border-radius: var(--radius-sm, 6px);
+            transition: all 0.2s ease;
         }
 
         .close-modal:hover {
-            background: var(--surface-2, #f1f5f9);
-            color: var(--danger, #ef4444);
+            background: var(--surface-alt, #FAF8F5);
+            color: var(--brand-primary, #245B48);
         }
 
         .policy-modal-body {
@@ -90,113 +93,112 @@
             overflow-y: auto;
             max-height: 50vh;
             line-height: 1.6;
-            color: var(--text-secondary, #475569);
+            color: var(--text-secondary, #57635C);
+            font-size: 13.5px;
         }
 
         .policy-modal-body h4 {
+            font-family: var(--font-serif, 'Newsreader', serif);
             font-size: 18px;
             font-weight: 600;
-            color: var(--text-primary, #0f172a);
-            margin: 0 0 16px 0;
+            color: var(--text-primary, #242A27);
+            margin: 0 0 14px 0;
         }
 
         .policy-modal-body h5 {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            color: var(--text-primary, #0f172a);
-            margin: 20px 0 10px 0;
+            color: var(--text-primary, #242A27);
+            margin: 18px 0 8px 0;
+            letter-spacing: -0.2px;
         }
 
         .policy-modal-body p {
-            font-size: 14px;
             margin-bottom: 12px;
         }
 
         .policy-modal-body ul {
-            margin: 10px 0 20px 20px;
+            margin: 8px 0 16px 20px;
         }
 
         .policy-modal-body li {
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 6px;
         }
 
         .modal-actions {
-            padding: 20px 24px;
-            border-top: 1px solid var(--border, #e2e8f0);
+            padding: 16px 24px;
+            border-top: 1px solid var(--border, #E5E1D8);
             display: flex;
             justify-content: flex-end;
         }
 
         .modal-actions .cancel-btn {
-            padding: 10px 24px;
-            background: var(--surface-2, #f1f5f9);
-            color: var(--text-primary, #0f172a);
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 10px 22px;
+            background: var(--surface-alt, #FAF8F5);
+            color: var(--text-primary, #242A27);
+            border: 1px solid var(--border, #E5E1D8);
+            border-radius: var(--radius-sm, 6px);
+            font-size: 13.5px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .modal-actions .cancel-btn:hover {
-            background: var(--border, #e2e8f0);
+            background: var(--border, #E5E1D8);
         }
 
-        /* Dark mode support */
+        body.dark-mode .modal {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
         body.dark-mode .modal-content {
-            background: var(--surface, #1a1f2c);
-            border-color: var(--border, #2d3648);
+            background: var(--surface, #1F2421);
+            border-color: var(--border, #2D3530);
         }
 
         body.dark-mode .modal-header {
-            border-bottom-color: var(--border, #2d3648);
+            border-bottom-color: var(--border, #2D3530);
         }
 
         body.dark-mode .modal-header h3 {
-            color: var(--text-primary, #f1f5f9);
+            color: var(--text-primary, #F5F3ED);
         }
 
         body.dark-mode .close-modal {
-            color: var(--text-muted, #64748b);
+            color: var(--text-muted, #6E7C74);
         }
 
         body.dark-mode .close-modal:hover {
-            background: var(--surface-2, #262d3e);
+            background: var(--surface-alt, #272F2B);
+            color: var(--text-primary, #F5F3ED);
         }
 
         body.dark-mode .policy-modal-body {
-            color: var(--text-secondary, #94a3b8);
+            color: var(--text-secondary, #A2B0A8);
         }
 
         body.dark-mode .policy-modal-body h4,
         body.dark-mode .policy-modal-body h5 {
-            color: var(--text-primary, #f1f5f9);
+            color: var(--text-primary, #F5F3ED);
         }
 
         body.dark-mode .modal-actions {
-            border-top-color: var(--border, #2d3648);
+            border-top-color: var(--border, #2D3530);
         }
 
         body.dark-mode .modal-actions .cancel-btn {
-            background: var(--surface-2, #262d3e);
-            color: var(--text-primary, #f1f5f9);
+            background: var(--surface-alt, #272F2B);
+            color: var(--text-primary, #F5F3ED);
+            border-color: var(--border, #2D3530);
         }
 
         body.dark-mode .modal-actions .cancel-btn:hover {
-            background: var(--border, #2d3648);
+            background: var(--border-strong, #3E4B43);
         }
     </style>
 </head>
 <body>
-    <!-- Animated background -->
-    <div class="bg-animation">
-        <div class="circle circle-1"></div>
-        <div class="circle circle-2"></div>
-        <div class="circle circle-3"></div>
-    </div>
-
     <!-- Main container -->
     <div class="container">
         <!-- Signup card -->
@@ -212,7 +214,7 @@
             <!-- Header section -->
             <div class="header">
                 <h1>Create account</h1>
-                <p>Start managing your finances today</p>
+                <p>Begin your curated personal wealth ledger</p>
             </div>
 
             <!-- Signup form -->
@@ -270,7 +272,7 @@
                                 placeholder="Create a password"
                                 required
                             >
-                            <button type="button" class="toggle-password" id="togglePassword">
+                            <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -296,7 +298,7 @@
                                 placeholder="Confirm your password"
                                 required
                             >
-                            <button type="button" class="toggle-password" id="toggleConfirmPassword">
+                            <button type="button" class="toggle-password" id="toggleConfirmPassword" aria-label="Toggle password visibility">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -365,12 +367,9 @@
     <script type="module" src="js/auth-errors.js"></script>
     <script type="module" src="js/signup.js"></script>
 
-    <!-- Improved Modal Script -->
+    <!-- Modal Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("🚀 Setting up Terms & Privacy modal...");
-            
-            // Get elements
             const modal = document.getElementById('policyModal');
             const modalTitle = document.getElementById('policyModalTitle');
             const modalBody = document.getElementById('policyModalBody');
@@ -379,17 +378,6 @@
             const termsLink = document.getElementById('termsLink');
             const privacyLink = document.getElementById('privacyLink');
             
-            console.log("Elements found:", {
-                modal: !!modal,
-                modalTitle: !!modalTitle,
-                modalBody: !!modalBody,
-                closeBtn: !!closeBtn,
-                closeFooterBtn: !!closeFooterBtn,
-                termsLink: !!termsLink,
-                privacyLink: !!privacyLink
-            });
-            
-            // Terms content
             const termsContent = `
                 <h4>Terms and Conditions</h4>
                 <p>Last updated: ${new Date().toLocaleDateString()}</p>
@@ -398,63 +386,51 @@
                 <p>By accessing and using this Expense Tracker application, you agree to be bound by these Terms and Conditions.</p>
                 
                 <h5>2. User Accounts</h5>
-                <p>You are responsible for maintaining the confidentiality of your account and for all activities under your account.</p>
+                <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities performed under your account.</p>
                 
-                <h5>3. Data Usage</h5>
-                <p>We store your expense data securely using Firebase. Your data is used only to provide you with the expense tracking service.</p>
+                <h5>3. Financial Data Isolation</h5>
+                <p>We store your financial records strictly isolated by your authenticated user ID in Firebase Cloud Firestore. Your financial transactions are never accessible to other accounts.</p>
                 
                 <h5>4. Privacy</h5>
-                <p>Your information is handled according to our Privacy Policy. We do not share your data with third parties.</p>
+                <p>Your financial records are strictly private. We do not sell, monetize, or disclose your financial records to any third party.</p>
                 
                 <h5>5. Service Availability</h5>
-                <p>We strive to maintain high availability but do not guarantee uninterrupted or error-free service.</p>
+                <p>We strive to maintain maximum uptime and data integrity using Google Cloud infrastructure.</p>
             `;
             
-            // Privacy content
             const privacyContent = `
                 <h4>Privacy Policy</h4>
                 <p>Last updated: ${new Date().toLocaleDateString()}</p>
                 
-                <h5>1. Information We Collect</h5>
+                <h5>1. Information We Store</h5>
                 <ul>
-                    <li><strong>Personal Information:</strong> Your name and email address</li>
-                    <li><strong>Financial Data:</strong> Expense amounts, categories, descriptions, and dates</li>
+                    <li><strong>Account Credentials:</strong> Full name and verified email address</li>
+                    <li><strong>Financial Records:</strong> Transaction amounts, categories, descriptions, and timestamps</li>
                 </ul>
                 
-                <h5>2. How We Use Your Information</h5>
+                <h5>2. How Your Data Is Protected</h5>
                 <ul>
-                    <li>Create and manage your account</li>
-                    <li>Display your expense dashboard and analytics</li>
-                    <li>Generate reports and exports</li>
+                    <li>All data transmitted over TLS 1.3 with Strict-Transport-Security</li>
+                    <li>Enforced Firestore Security Rules with UID-level isolation</li>
+                    <li>Automatic rate-limiting protection against brute force attacks</li>
                 </ul>
                 
-                <h5>3. Data Storage</h5>
-                <p>All data is securely stored in Firebase Cloud Firestore with encryption.</p>
-                
-                <h5>4. Data Sharing</h5>
-                <p>We do not sell or share your personal information with third parties.</p>
-                
-                <h5>5. Your Rights</h5>
-                <p>You can access, export, modify, or delete your data at any time through the dashboard.</p>
+                <h5>3. Your Rights & Portability</h5>
+                <p>You have full ownership of your financial data. You may export your entire transaction history to CSV or PDF at any time, or modify and delete individual records directly from the ledger.</p>
             `;
             
-            // Function to open modal
             function openModal(title, content) {
-                console.log("Opening modal with title:", title);
                 modalTitle.textContent = title;
                 modalBody.innerHTML = content;
                 modal.classList.add('show');
-                modal.style.display = 'flex'; // Fallback
+                modal.style.display = 'flex';
             }
             
-            // Function to close modal
             function closeModal() {
-                console.log("Closing modal");
                 modal.classList.remove('show');
                 modal.style.display = 'none';
             }
             
-            // Terms link click
             if (termsLink) {
                 termsLink.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -462,7 +438,6 @@
                 });
             }
             
-            // Privacy link click
             if (privacyLink) {
                 privacyLink.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -470,24 +445,13 @@
                 });
             }
             
-            // Close button click
-            if (closeBtn) {
-                closeBtn.addEventListener('click', closeModal);
-            }
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (closeFooterBtn) closeFooterBtn.addEventListener('click', closeModal);
             
-            // Close footer button click
-            if (closeFooterBtn) {
-                closeFooterBtn.addEventListener('click', closeModal);
-            }
-            
-            // Click outside to close
             window.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
+                if (event.target === modal) closeModal();
             });
             
-            // Escape key to close
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape' && modal.classList.contains('show')) {
                     closeModal();
